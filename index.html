@@ -1,0 +1,2296 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>棲風 (NestWind) ｜ 新竹異地生活足跡與心靈漫遊指南</title>
+  
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  
+  <!-- Google Fonts (Noto Sans TC & Noto Serif TC) -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@300;400;500;700;900&family=Noto+Serif+TC:wght@600;700;900&display=swap" rel="stylesheet">
+  
+  <!-- Font Awesome 6 CDN -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+  
+  <!-- Leaflet Map CSS & JS -->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            sand: { 50: '#FAF8F5', 100: '#F4EFE9', 200: '#E7DFD5', 300: '#D5C7B7' },
+            warm: { 500: '#D97706', 600: '#B45309', 700: '#92400E', 800: '#78350F' },
+            sage: { 100: '#EDF3EC', 600: '#4D7C0F', 700: '#3F6212' }
+          },
+          fontFamily: {
+            sans: ['"Noto Sans TC"', 'sans-serif'],
+            serif: ['"Noto Serif TC"', 'serif']
+          }
+        }
+      }
+    }
+  </script>
+
+  <style>
+    /* 滾動條美化 */
+    ::-webkit-scrollbar { width: 6px; height: 6px; }
+    ::-webkit-scrollbar-track { background: #FAF8F5; }
+    ::-webkit-scrollbar-thumb { background: #D5C7B7; border-radius: 4px; }
+    ::-webkit-scrollbar-thumb:hover { background: #B45309; }
+
+    /* 金色任務成就高光動效 */
+    .golden-achievement {
+      background: linear-gradient(135deg, #fffbeb 0%, #fef3c7 40%, #fde68a 100%) !important;
+      border: 2px solid #f59e0b !important;
+      box-shadow: 0 12px 28px -6px rgba(245, 158, 11, 0.45) !important;
+    }
+
+    /* 封蠟展開信件微動態 */
+    @keyframes unsealEnvelope {
+      0% { transform: scale(0.96) translateY(10px); opacity: 0; }
+      100% { transform: scale(1) translateY(0); opacity: 1; }
+    }
+    .letter-reveal {
+      animation: unsealEnvelope 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+    }
+
+    /* 自訂 Leaflet 地圖圖釘 */
+    .custom-div-pin {
+      background: transparent;
+      border: none;
+    }
+
+    /* 卡片懸浮陰影 */
+    .place-card-hover {
+      transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+    .place-card-hover:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 8px 20px -4px rgba(180, 83, 9, 0.15);
+    }
+  </style>
+</head>
+<body class="bg-sand-50 text-stone-800 font-sans min-h-screen flex flex-col antialiased selection:bg-amber-200">
+
+  <!-- ================= 頂端導航與個人名片 ================= -->
+  <header class="bg-white/90 backdrop-blur-md border-b border-sand-200 sticky top-0 z-40">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
+      
+      <!-- LOGO -->
+      <div class="flex items-center space-x-3 cursor-pointer" onclick="switchTab('chat')">
+        <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-amber-600 to-amber-500 flex items-center justify-center text-white shadow-md shadow-amber-600/25">
+          <i class="fa-solid fa-wind text-lg"></i>
+        </div>
+        <div>
+          <span class="font-serif font-black text-xl tracking-wider text-stone-900 block leading-none">棲風</span>
+          <span class="text-[11px] text-stone-500 tracking-tight font-medium">NestWind · 新竹異地生活足跡與心靈漫遊指南</span>
+        </div>
+      </div>
+
+      <!-- 右側：異鄉人身分名片徽章 -->
+      <div class="flex items-center space-x-3">
+        <button id="profileBadgeBtn" onclick="openProfileModal()" class="flex items-center space-x-2 bg-sand-100 hover:bg-sand-200 text-stone-700 px-3.5 py-1.5 rounded-full border border-sand-200 transition text-sm shadow-sm group">
+          <i class="fa-solid fa-address-card text-amber-600 group-hover:scale-110 transition-transform"></i>
+          <span id="badgeProfileText" class="font-bold text-xs sm:text-sm text-stone-800">來自台中的谷谷</span>
+          <i class="fa-solid fa-pen text-[10px] text-stone-400 group-hover:text-amber-600"></i>
+        </button>
+      </div>
+    </div>
+
+    <!-- 6 大核心主導覽籤 (Tab Bar) -->
+    <nav class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex space-x-1 sm:space-x-4 overflow-x-auto text-sm font-medium border-t border-sand-100">
+      <button onclick="switchTab('chat')" id="tabBtn-chat" class="tab-link py-3 px-3 border-b-2 border-amber-600 text-amber-700 font-bold flex items-center space-x-2 whitespace-nowrap">
+        <i class="fa-solid fa-comments"></i>
+        <span>漫遊對話</span>
+      </button>
+      <button onclick="switchTab('quest')" id="tabBtn-quest" class="tab-link py-3 px-3 border-b-2 border-transparent text-stone-500 hover:text-stone-800 flex items-center space-x-2 whitespace-nowrap">
+        <i class="fa-solid fa-sparkles text-amber-500"></i>
+        <span>靈感占卜</span>
+      </button>
+      <button onclick="switchTab('map')" id="tabBtn-map" class="tab-link py-3 px-3 border-b-2 border-transparent text-stone-500 hover:text-stone-800 flex items-center space-x-2 whitespace-nowrap">
+        <i class="fa-solid fa-map-location-dot"></i>
+        <span>地圖全覽</span>
+      </button>
+      <button onclick="switchTab('diary')" id="tabBtn-diary" class="tab-link py-3 px-3 border-b-2 border-transparent text-stone-500 hover:text-stone-800 flex items-center space-x-2 whitespace-nowrap">
+        <i class="fa-solid fa-envelope-open-text"></i>
+        <span>封蠟日記</span>
+      </button>
+      <button onclick="switchTab('hangout')" id="tabBtn-hangout" class="tab-link py-3 px-3 border-b-2 border-transparent text-stone-500 hover:text-stone-800 flex items-center space-x-2 whitespace-nowrap">
+        <i class="fa-solid fa-handshake-angle text-sage-600"></i>
+        <span>微光同行</span>
+      </button>
+      <button onclick="switchTab('bookmarks')" id="tabBtn-bookmarks" class="tab-link py-3 px-3 border-b-2 border-transparent text-stone-500 hover:text-stone-800 flex items-center space-x-2 whitespace-nowrap">
+        <i class="fa-solid fa-bookmark"></i>
+        <span>足跡收藏</span>
+      </button>
+    </nav>
+  </header>
+
+  <!-- ================= 核心主容器 ================= -->
+  <main class="flex-grow max-w-7xl mx-auto w-full px-4 sm:px-6 lg:px-8 py-6">
+
+    <!-- ================= TAB 1: 漫遊對話 ================= -->
+    <section id="view-chat" class="space-y-4">
+      
+      <!-- 模式切換開關 -->
+      <div class="bg-white rounded-2xl p-4 shadow-sm border border-sand-200 flex flex-col sm:flex-row items-center justify-between gap-3">
+        <div class="flex items-center space-x-3">
+          <div id="modeIconWrapper" class="w-10 h-10 rounded-xl bg-amber-100 text-amber-700 flex items-center justify-center text-lg">
+            <i id="modeIcon" class="fa-solid fa-compass"></i>
+          </div>
+          <div>
+            <div class="flex items-center gap-2">
+              <h2 id="modeTitle" class="font-bold text-stone-900 text-base">🗺️ 實用地圖探索模式</h2>
+              <span id="modeTag" class="text-[11px] bg-amber-100 text-amber-800 font-bold px-2 py-0.5 rounded-full">1/3 精選法 · Google 高星好店推薦</span>
+            </div>
+            <p id="modeDesc" class="text-xs text-stone-500 mt-0.5">針對打卡熱點、慢活漫遊、老屋咖啡、火鍋、牛排、小吃與居酒屋，精選 Top 3 高星好店並支援實況導航。</p>
+          </div>
+        </div>
+
+        <div class="bg-sand-100 p-1 rounded-xl flex items-center text-xs font-bold border border-sand-200">
+          <button onclick="setMode('explore')" id="btnModeExplore" class="px-4 py-2 rounded-lg bg-amber-600 text-white shadow-sm transition font-bold flex items-center gap-1.5">
+            <i class="fa-solid fa-map-marked-alt"></i>
+            <span>地圖探索找店</span>
+          </button>
+          <button onclick="setMode('treehole')" id="btnModeTreehole" class="px-4 py-2 rounded-lg text-stone-600 hover:text-stone-900 transition flex items-center gap-1.5">
+            <i class="fa-solid fa-hand-holding-heart"></i>
+            <span>心靈樹洞陪伴</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- 對話串區域 -->
+      <div class="bg-white rounded-2xl shadow-sm border border-sand-200 flex flex-col h-[560px] overflow-hidden">
+        <div id="chatMessages" class="flex-1 p-5 overflow-y-auto space-y-4 bg-gradient-to-b from-sand-50/40 to-white">
+          <!-- 訊息動態注入 -->
+        </div>
+
+        <!-- 快捷標籤提示 -->
+        <div class="px-4 py-2.5 bg-sand-50/80 border-t border-sand-100 flex items-center space-x-2 overflow-x-auto text-xs">
+          <span class="text-stone-400 whitespace-nowrap font-medium"><i class="fa-solid fa-wand-magic-sparkles mr-1 text-amber-600"></i>熱門指引：</span>
+          <button onclick="quickSend('推薦新竹最值得拍照打卡的熱門私房景點')" class="px-3 py-1 bg-white hover:bg-fuchsia-50 hover:text-fuchsia-800 border border-fuchsia-200 rounded-full whitespace-nowrap transition font-bold shadow-xs">
+            📸 打卡熱點 (魚鱗天梯/豆腐岩)
+          </button>
+          <button onclick="quickSend('新竹有哪些適合假日漫遊散策的自然步道？')" class="px-3 py-1 bg-white hover:bg-teal-50 hover:text-teal-800 border border-teal-200 rounded-full whitespace-nowrap transition font-bold shadow-xs">
+            🌿 慢活漫遊 (十八尖山/青青草原)
+          </button>
+          <button onclick="quickSend('想找新竹最有特色的人氣老屋咖啡廳')" class="px-3 py-1 bg-white hover:bg-amber-50 hover:text-amber-800 border border-amber-200 rounded-full whitespace-nowrap transition font-bold shadow-xs">
+            ☕ 人氣咖啡 (暗室微光/吉十肉桂捲)
+          </button>
+          <button onclick="quickSend('我想找新竹必吃的火鍋店好好犒賞自己')" class="px-3 py-1 bg-white hover:bg-red-50 hover:text-red-800 border border-red-200 rounded-full whitespace-nowrap transition font-bold shadow-xs">
+            🍲 人氣火鍋 (汕頭/麻辣/石頭鍋)
+          </button>
+          <button onclick="quickSend('推薦新竹大口吃肉的排隊牛排店')" class="px-3 py-1 bg-white hover:bg-stone-100 hover:text-stone-900 border border-sand-200 rounded-full whitespace-nowrap transition font-bold shadow-xs">
+            🥩 大口吃牛排 (巨城Buffet/美式)
+          </button>
+          <button onclick="quickSend('想去城隍廟周邊吃最道地的新竹在地小吃')" class="px-3 py-1 bg-white hover:bg-orange-50 hover:text-orange-800 border border-orange-200 rounded-full whitespace-nowrap transition font-bold shadow-xs">
+            🥢 城隍廟小吃 (鴨香飯/米粉)
+          </button>
+          <button onclick="quickSend('我想找一個可以放肆大喝的啤酒屋或居酒屋讓我心情輕鬆')" class="px-3 py-1 bg-white hover:bg-rose-50 hover:text-rose-800 border border-rose-200 rounded-full whitespace-nowrap transition font-bold shadow-xs">
+            🍺 居酒屋小酌 (喝生啤酒)
+          </button>
+          <button onclick="quickSend('新竹有哪些輕鬆愜意的腳踏車路線？')" class="px-3 py-1 bg-white hover:bg-emerald-50 hover:text-emerald-800 border border-emerald-200 rounded-full whitespace-nowrap transition shadow-xs">
+            🚲 愜意單車路線 (十七公里)
+          </button>
+          <button onclick="quickSend('初到新竹推薦搭哪幾條公車路線自由行？')" class="px-3 py-1 bg-white hover:bg-blue-50 hover:text-blue-800 border border-blue-200 rounded-full whitespace-nowrap transition shadow-xs">
+            🚌 自由行公車 (1路大動脈)
+          </button>
+          <button onclick="quickSend('新竹有哪些跟風有關的歷史古蹟景點？')" class="px-3 py-1 bg-white hover:bg-stone-100 hover:text-stone-800 border border-sand-200 rounded-full whitespace-nowrap transition shadow-xs">
+            🏛️ 歷史文化古蹟 (東門城/州廳)
+          </button>
+        </div>
+
+        <!-- 底部輸入列 -->
+        <div class="p-3.5 bg-white border-t border-sand-200 flex items-center gap-2">
+          <button id="btnVoiceInput" onclick="toggleVoiceInput()" title="點擊語音轉文字輸入" class="w-10 h-10 rounded-xl bg-sand-100 hover:bg-amber-100 text-stone-600 hover:text-amber-700 flex items-center justify-center transition">
+            <i id="micIcon" class="fa-solid fa-microphone"></i>
+          </button>
+
+          <input type="text" id="chatInput" placeholder="輸入打卡、漫遊、咖啡、火鍋、牛排、小吃、居酒屋、單車或公車..." class="flex-1 px-4 py-2.5 text-sm bg-sand-50 rounded-xl border border-sand-200 focus:outline-none focus:ring-2 focus:ring-amber-500/30 focus:border-amber-600" onkeydown="if(event.key==='Enter') sendMessage()" />
+
+          <button onclick="sendMessage()" class="px-5 py-2.5 bg-amber-600 hover:bg-amber-700 text-white text-sm font-bold rounded-xl shadow-md shadow-amber-600/20 transition flex items-center gap-1.5">
+            <span>送出</span>
+            <i class="fa-solid fa-paper-plane text-xs"></i>
+          </button>
+        </div>
+      </div>
+    </section>
+
+    <!-- ================= TAB 2: 靈感占卜任務 ================= -->
+    <section id="view-quest" class="hidden space-y-6">
+      <div class="bg-white rounded-2xl p-6 shadow-sm border border-sand-200 flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+        <div>
+          <div class="flex items-center space-x-2">
+            <span class="bg-amber-100 text-amber-800 text-xs px-2.5 py-0.5 rounded-full font-bold">遊戲化探索</span>
+            <h3 class="font-serif font-bold text-xl text-stone-900">靈感占卜抽卡</h3>
+          </div>
+          <p class="text-sm text-stone-600 mt-1">不知道休假要去哪裡？抽取一張今日指引卡，讓棲風帶你踏出兩點一線的生活。</p>
+        </div>
+        <button onclick="drawQuestCard()" class="px-5 py-2.5 bg-amber-600 hover:bg-amber-700 text-white text-sm font-bold rounded-xl shadow-md shadow-amber-600/25 transition flex items-center gap-2">
+          <i class="fa-solid fa-shuffle"></i>
+          <span>抽取今日靈感卡</span>
+        </button>
+      </div>
+
+      <div class="flex justify-center py-4">
+        <div id="questCardBox" class="w-full max-w-xl transition-all duration-300">
+          <div id="questCardInner" class="bg-white rounded-3xl p-8 border-2 border-sand-200 shadow-md relative overflow-hidden space-y-6">
+            
+            <div class="flex items-center justify-between border-b border-sand-100 pb-4">
+              <span id="questCardCategory" class="text-xs bg-amber-100 text-amber-800 px-3 py-1 rounded-full font-bold">生活放肆犒賞卡</span>
+              <span id="questCardStatus" class="text-xs text-stone-400 font-bold tracking-wider">READY TO EXPLORE</span>
+            </div>
+
+            <div class="space-y-3">
+              <h4 id="questCardTitle" class="font-serif font-black text-2xl text-stone-900 leading-snug">滾燙砂鍋裡的沙茶牛肉慰藉</h4>
+              <p id="questCardDesc" class="text-stone-600 text-sm leading-relaxed">
+                換下拘束的步伐，走進百年老市場巷弄點上一鍋大骨扁魚沙茶鍋，手切溫體牛涮下幾秒入口，讓蒸騰的熱氣烘暖整週的疲憊。
+              </p>
+              <div class="p-3 bg-sand-50 rounded-xl border border-sand-200 text-xs text-stone-600 flex items-center gap-2">
+                <i class="fa-solid fa-location-dot text-amber-600"></i>
+                <span>推薦地點：<strong id="questCardSpotName" class="text-stone-800">西市汕頭館（總店）</strong></span>
+              </div>
+            </div>
+
+            <div class="pt-4 border-t border-sand-100 flex flex-wrap items-center justify-between gap-3">
+              <button onclick="acceptQuestAndJumpMap()" class="px-4 py-2 bg-stone-900 hover:bg-stone-800 text-white text-xs font-bold rounded-xl transition flex items-center gap-1.5 shadow-sm">
+                <i class="fa-solid fa-location-crosshairs text-amber-400"></i>
+                <span>接受任務並在地圖定位</span>
+              </button>
+
+              <button id="btnCheckInQuest" onclick="completeCurrentQuest()" class="px-5 py-2 bg-amber-600 hover:bg-amber-700 text-white text-xs font-bold rounded-xl transition flex items-center gap-1.5 shadow-md shadow-amber-600/20">
+                <i class="fa-solid fa-check"></i>
+                <span>前往打卡解鎖金色卡牌</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ================= TAB 3: 地圖全覽 ================= -->
+    <section id="view-map" class="hidden space-y-4">
+      <div class="bg-white rounded-2xl shadow-sm border border-sand-200 overflow-hidden">
+        <div class="p-4 border-b border-sand-200 flex flex-col md:flex-row items-start md:items-center justify-between gap-3 bg-sand-50/60">
+          <div class="flex items-center space-x-2">
+            <div class="w-8 h-8 rounded-lg bg-amber-600 text-white flex items-center justify-center text-sm shadow-sm">
+              <i class="fa-solid fa-map"></i>
+            </div>
+            <div>
+              <span class="font-bold text-sm text-stone-900 block leading-tight">新竹生活足跡地圖</span>
+              <span class="text-[11px] text-stone-500">採用 ESRI 高清台灣街景圖資 · 自動框選聚焦 · 徹底杜絕地圖漂移與水印</span>
+            </div>
+          </div>
+
+          <!-- 分類過濾按鈕 -->
+          <div class="flex items-center space-x-1.5 text-xs font-medium overflow-x-auto w-full md:w-auto pb-1 md:pb-0">
+            <button onclick="filterMap('all', this)" class="map-filter px-3 py-1.5 rounded-lg bg-stone-800 text-white transition whitespace-nowrap font-bold">全部展示 (34)</button>
+            <button onclick="filterMap('photo', this)" class="map-filter px-3 py-1.5 rounded-lg bg-white border border-sand-200 text-stone-700 hover:bg-sand-100 transition whitespace-nowrap font-medium">📸 打卡熱點</button>
+            <button onclick="filterMap('roam', this)" class="map-filter px-3 py-1.5 rounded-lg bg-white border border-sand-200 text-stone-700 hover:bg-sand-100 transition whitespace-nowrap font-medium">🌿 漫遊景點</button>
+            <button onclick="filterMap('cafe', this)" class="map-filter px-3 py-1.5 rounded-lg bg-white border border-sand-200 text-stone-700 hover:bg-sand-100 transition whitespace-nowrap font-medium">☕ 人氣老屋咖啡</button>
+            <button onclick="filterMap('hotpot', this)" class="map-filter px-3 py-1.5 rounded-lg bg-white border border-sand-200 text-stone-700 hover:bg-sand-100 transition whitespace-nowrap font-medium">🍲 火鍋精選</button>
+            <button onclick="filterMap('steak', this)" class="map-filter px-3 py-1.5 rounded-lg bg-white border border-sand-200 text-stone-700 hover:bg-sand-100 transition whitespace-nowrap font-medium">🥩 人氣牛排</button>
+            <button onclick="filterMap('snack', this)" class="map-filter px-3 py-1.5 rounded-lg bg-white border border-sand-200 text-stone-700 hover:bg-sand-100 transition whitespace-nowrap font-medium">🥢 在地小吃</button>
+            <button onclick="filterMap('bar', this)" class="map-filter px-3 py-1.5 rounded-lg bg-white border border-sand-200 text-stone-700 hover:bg-sand-100 transition whitespace-nowrap font-medium">🍺 居酒屋/小酌</button>
+            <button onclick="filterMap('bike', this)" class="map-filter px-3 py-1.5 rounded-lg bg-white border border-sand-200 text-stone-700 hover:bg-sand-100 transition whitespace-nowrap font-medium">🚲 愜意單車</button>
+            <button onclick="filterMap('bus', this)" class="map-filter px-3 py-1.5 rounded-lg bg-white border border-sand-200 text-stone-700 hover:bg-sand-100 transition whitespace-nowrap font-medium">🚌 自由公車</button>
+            <button onclick="filterMap('history', this)" class="map-filter px-3 py-1.5 rounded-lg bg-white border border-sand-200 text-stone-700 hover:bg-sand-100 transition whitespace-nowrap font-medium">🏛️ 歷史古蹟</button>
+            <button onclick="filterMap('walk', this)" class="map-filter px-3 py-1.5 rounded-lg bg-white border border-sand-200 text-stone-700 hover:bg-sand-100 transition whitespace-nowrap font-medium">🌊 散步放空</button>
+          </div>
+        </div>
+
+        <div id="hsinchuMap" class="w-full h-[540px] z-10 bg-sand-100"></div>
+      </div>
+    </section>
+
+    <!-- ================= TAB 4: 封蠟心情日記 ================= -->
+    <section id="view-diary" class="space-y-6 hidden">
+      
+      <!-- 頂部功能說明與私密性保證橫幅 -->
+      <div class="bg-amber-50/70 border border-amber-200/80 rounded-2xl p-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 text-xs text-amber-900">
+        <div class="flex items-center gap-2.5">
+          <div class="w-7 h-7 rounded-lg bg-amber-600 text-white flex items-center justify-center text-xs flex-shrink-0">
+            <i class="fa-solid fa-shield-halved"></i>
+          </div>
+          <div>
+            <span class="font-bold block text-stone-900">🔒 100% 個人私密樹洞 · 安心傾訴無負擔</span>
+            <span class="text-stone-600">日記僅寄給守護夥伴「棲風」並生成專屬封蠟回信，絕不對外公開；每次紀錄皆會沉澱為下方屬於你的「心靈成長歷程」。</span>
+          </div>
+        </div>
+
+        <!-- 心情統計徽章 -->
+        <div id="diaryStatsBadge" class="bg-white px-3 py-1.5 rounded-xl border border-amber-200 font-bold text-stone-700 shadow-xs flex items-center gap-2 whitespace-nowrap">
+          <i class="fa-solid fa-chart-simple text-amber-600"></i>
+          <span>已累積 <strong id="diaryTotalCount" class="text-amber-700">0</strong> 篇心靈軌跡</span>
+        </div>
+      </div>
+
+      <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+        
+        <!-- 左側：撰寫今日日記 -->
+        <div class="lg:col-span-5 bg-white rounded-2xl p-6 shadow-sm border border-sand-200 space-y-4">
+          <div class="border-b border-sand-100 pb-3">
+            <h3 class="font-serif font-bold text-lg text-stone-900 flex items-center gap-2">
+              <i class="fa-solid fa-feather-pointed text-amber-600"></i>
+              <span>書寫今日心靈雜感</span>
+            </h3>
+            <p class="text-xs text-stone-500 mt-1">選取心情基調，寫下悄悄話寄給棲風，棲風會在閱讀後為你封上一封專屬信件。</p>
+          </div>
+
+          <!-- 心情表情選擇器 -->
+          <div>
+            <label class="block text-xs font-bold text-stone-600 mb-2">今天的心情基調：</label>
+            <div class="grid grid-cols-4 gap-2">
+              <button type="button" onclick="selectMood('calm', this)" class="mood-btn p-2 rounded-xl border-2 border-amber-600 bg-amber-50 text-center transition flex flex-col items-center">
+                <span class="text-xl">🍃</span>
+                <span class="text-xs font-bold mt-1 text-stone-800">平靜</span>
+              </button>
+              <button type="button" onclick="selectMood('confused', this)" class="mood-btn p-2 rounded-xl border border-sand-200 bg-sand-50 hover:bg-sand-100 text-center transition flex flex-col items-center">
+                <span class="text-xl">🌫️</span>
+                <span class="text-xs font-medium mt-1 text-stone-600">迷茫</span>
+              </button>
+              <button type="button" onclick="selectMood('lonely', this)" class="mood-btn p-2 rounded-xl border border-sand-200 bg-sand-50 hover:bg-sand-100 text-center transition flex flex-col items-center">
+                <span class="text-xl">🌧️</span>
+                <span class="text-xs font-medium mt-1 text-stone-600">孤單</span>
+              </button>
+              <button type="button" onclick="selectMood('joy', this)" class="mood-btn p-2 rounded-xl border border-sand-200 bg-sand-50 hover:bg-sand-100 text-center transition flex flex-col items-center">
+                <span class="text-xl">☀️</span>
+                <span class="text-xs font-medium mt-1 text-stone-600">雀躍</span>
+              </button>
+            </div>
+          </div>
+
+          <!-- 今日關聯地點 -->
+          <div>
+            <label class="block text-xs font-bold text-stone-600 mb-1">今日足跡地點（選填）：</label>
+            <select id="diaryLocation" class="w-full px-3.5 py-2 text-sm bg-sand-50 rounded-xl border border-sand-200 focus:outline-none focus:ring-2 focus:ring-amber-500/30">
+              <option value="南寮漁港 · 魚鱗天梯">南寮漁港 · 魚鱗天梯 (4.4★ 打卡熱點)</option>
+              <option value="頭前溪豆腐岩">頭前溪豆腐岩 (4.3★ 幾何秘境)</option>
+              <option value="暗室微光 In the Dark">暗室微光 (4.6★ 老宅焦糖布丁)</option>
+              <option value="吉十咖啡 GODSPEED">吉十咖啡 (4.6★ 頂級肉桂捲)</option>
+              <option value="十八尖山公園 · 綠意步道">十八尖山步道 (4.6★ 森林漫遊)</option>
+              <option value="香山青青草原">香山青青草原 (4.5★ 廣袤大草坪)</option>
+              <option value="西市汕頭館（總店）">西市汕頭館 (4.2★ 百年沙茶火鍋)</option>
+              <option value="牛室炙燒牛排（新竹巨城店）">牛室炙燒牛排 (4.6★ 披薩Buffet吃到飽)</option>
+              <option value="新竹廟口鴨香飯">廟口鴨香飯 (4.3★ 煙燻鴨油熱食)</option>
+              <option value="大叔酒食炭火一頭牛">大叔酒食炭火一頭牛 (4.6★ 居酒屋)</option>
+              <option value="辛志平校長故居 (後院咖啡)">辛志平校長故居 (4.7★ 日式老屋)</option>
+              <option value="十七公里海岸線自行車道">十七公里海岸線 (4.6★ 濱海單車)</option>
+              <option value="新竹租屋處">待在租屋處一整天</option>
+              <option value="實驗室 / 辦公室">實驗室 / 辦公室加班</option>
+            </select>
+          </div>
+
+          <!-- 日記內文輸入 -->
+          <div>
+            <label class="block text-xs font-bold text-stone-600 mb-1">寫給風的悄悄話：</label>
+            <textarea id="diaryContent" rows="4" placeholder="今天下班後好想去吃一頓滾燙的沙茶火鍋，或去吃牛排大口吃肉犒賞自己..." class="w-full p-3 text-sm bg-sand-50 rounded-xl border border-sand-200 focus:outline-none focus:ring-2 focus:ring-amber-500/30"></textarea>
+          </div>
+
+          <!-- 寄信按鈕 -->
+          <button onclick="submitDiary()" class="w-full py-3 bg-amber-600 hover:bg-amber-700 text-white font-bold rounded-xl shadow-md shadow-amber-600/20 transition flex items-center justify-center gap-2">
+            <i class="fa-solid fa-paper-plane text-xs"></i>
+            <span>寄給棲風並獲取封蠟回信</span>
+          </button>
+        </div>
+
+        <!-- 右側：火漆封蠟回信盒與時間軸 -->
+        <div class="lg:col-span-7 space-y-4">
+          <div id="latestLetterBox" class="bg-gradient-to-br from-amber-50/80 via-white to-sand-100 rounded-2xl p-6 shadow-sm border border-amber-200 relative overflow-hidden">
+            <div class="flex items-center justify-between border-b border-amber-200/60 pb-3 mb-4">
+              <div class="flex items-center space-x-2">
+                <span class="w-3.5 h-3.5 rounded-full bg-amber-500 ring-4 ring-amber-100"></span>
+                <h4 class="font-serif font-bold text-stone-900">棲風的火漆封蠟回信</h4>
+              </div>
+              <span id="letterDate" class="text-xs text-stone-500 font-medium">最新收信</span>
+            </div>
+
+            <!-- 信件內容 -->
+            <div id="letterBody" class="space-y-3 font-serif text-stone-800 leading-relaxed text-sm min-h-[120px] flex items-center justify-center">
+              <p class="text-stone-400 italic text-center">尚未寄出今日日記。<br>寫下一段字句，讓棲風為你回信。</p>
+            </div>
+
+            <div class="mt-4 pt-3 border-t border-amber-200/50 flex justify-end">
+              <button id="btnReadLetterVoice" onclick="readLetterAloud()" class="text-xs bg-white hover:bg-amber-100 text-amber-800 px-3.5 py-1.5 rounded-full border border-amber-300 font-bold transition flex items-center gap-1.5 shadow-sm">
+                <i class="fa-solid fa-headphones"></i>
+                <span>聆聽回信語音</span>
+              </button>
+            </div>
+          </div>
+
+          <!-- 歷史日記時光膠囊 -->
+          <div class="bg-white rounded-2xl p-5 shadow-sm border border-sand-200">
+            <div class="flex items-center justify-between mb-3">
+              <h4 class="font-bold text-sm text-stone-800 flex items-center gap-2">
+                <i class="fa-solid fa-clock-rotate-left text-amber-600"></i>
+                <span>往日足跡與回憶錄（心情歷程時光膠囊）</span>
+              </h4>
+              <span class="text-[11px] text-stone-400">點擊紀錄即可重溫信件與回信</span>
+            </div>
+            <div id="diaryHistoryList" class="space-y-2.5 max-h-[240px] overflow-y-auto pr-1">
+              <!-- 歷史條目 -->
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </section>
+
+    <!-- ================= TAB 5: 微光同行公佈欄 ================= -->
+    <section id="view-hangout" class="hidden space-y-6">
+      <div class="bg-white rounded-2xl p-5 shadow-sm border border-sand-200 flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+        <div>
+          <div class="flex items-center space-x-2">
+            <span class="bg-sage-100 text-sage-700 text-xs px-2.5 py-0.5 rounded-full font-bold">弱連結同行倡議</span>
+            <h3 class="font-serif font-bold text-lg text-stone-900">微光同行公佈欄</h3>
+          </div>
+          <p class="text-sm text-stone-600 mt-1">想吃火鍋、牛排或小酌但找不到伴？在這裡發出「各自安靜同桌、各付各的」同行邀約，無社交壓力。</p>
+        </div>
+        <button onclick="openCreateHangoutModal()" class="px-4 py-2.5 bg-amber-600 hover:bg-amber-700 text-white text-sm font-bold rounded-xl shadow-md shadow-amber-600/20 transition flex items-center gap-2 whitespace-nowrap">
+          <i class="fa-solid fa-plus"></i>
+          <span>發起漫遊邀約</span>
+        </button>
+      </div>
+
+      <!-- 邀約卡片網格清單 -->
+      <div id="hangoutGrid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+        <!-- JS 動態注入卡片 -->
+      </div>
+    </section>
+
+    <!-- ================= TAB 6: 足跡與記憶收藏庫 2.0 ================= -->
+    <section id="view-bookmarks" class="hidden space-y-6">
+      <div class="bg-white rounded-2xl p-4 shadow-sm border border-sand-200 flex flex-col sm:flex-row items-center justify-between gap-3">
+        <!-- 全域搜尋輸入欄 -->
+        <div class="relative w-full sm:w-80">
+          <i class="fa-solid fa-magnifying-glass absolute left-3.5 top-3 text-stone-400 text-xs"></i>
+          <input type="text" id="bookmarkSearch" placeholder="搜尋打卡、漫遊、咖啡、火鍋、牛排或小吃..." oninput="renderBookmarks()" class="w-full pl-9 pr-4 py-2 text-xs bg-sand-50 rounded-xl border border-sand-200 focus:outline-none focus:ring-2 focus:ring-amber-500/30">
+        </div>
+
+        <!-- 雙頁籤過濾 -->
+        <div class="flex items-center space-x-2 text-xs font-bold">
+          <button onclick="switchBookmarkSubTab('places')" id="bTab-places" class="px-4 py-2 rounded-xl bg-stone-900 text-white transition shadow-sm">
+            精選地點足跡 (<span id="countPlaces">0</span>)
+          </button>
+          <button onclick="switchBookmarkSubTab('quests')" id="bTab-quests" class="px-4 py-2 rounded-xl bg-sand-100 text-stone-600 hover:bg-sand-200 transition">
+            金色成就卡 (<span id="countQuests">0</span>)
+          </button>
+        </div>
+      </div>
+
+      <!-- 收藏卡片容器 -->
+      <div id="bookmarkCardsGrid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+        <!-- JS 動態生成 -->
+      </div>
+    </section>
+
+  </main>
+
+  <!-- ================= 頁尾宣告 ================= -->
+  <footer class="bg-white border-t border-sand-200 py-6 text-center text-xs text-stone-500">
+    <p class="font-medium text-stone-700">棲風 (NestWind) · 生成式 AI 系統研究與創新應用實務 ｜ Vibe Coding 專案實作</p>
+    <p class="mt-1 text-stone-400">專為新竹異地遊子打造的城市空間與心靈棲息角落 · 單一 index.html 純前端架構</p>
+  </footer>
+
+  <!-- ================= 自訂 Toast 提示元件 ================= -->
+  <div id="toastNotification" class="fixed bottom-6 right-6 z-50 bg-stone-900 text-white text-xs font-medium px-4 py-3 rounded-xl shadow-xl transition-all duration-300 transform translate-y-16 opacity-0 flex items-center space-x-2 pointer-events-none">
+    <i id="toastIcon" class="fa-solid fa-circle-check text-amber-400"></i>
+    <span id="toastMsg">通知訊息</span>
+  </div>
+
+  <!-- ================= MODAL: 異鄉人身分名片設定 ================= -->
+  <div id="profileModal" class="fixed inset-0 bg-stone-900/50 backdrop-blur-xs z-50 flex items-center justify-center p-4 hidden">
+    <div class="bg-white rounded-2xl max-w-md w-full p-6 shadow-2xl border border-sand-200 space-y-4">
+      <div class="flex justify-between items-center border-b border-sand-100 pb-3">
+        <h3 class="font-serif font-bold text-lg text-stone-900 flex items-center gap-2">
+          <i class="fa-solid fa-address-card text-amber-600"></i>
+          <span>異鄉人身分名片</span>
+        </h3>
+        <button onclick="closeProfileModal()" class="text-stone-400 hover:text-stone-700"><i class="fa-solid fa-xmark"></i></button>
+      </div>
+
+      <p class="text-xs text-stone-500 leading-relaxed">
+        設定你的稱呼與故鄉，系統會將它保存在瀏覽器本機中。對話與回信時，棲風會以專屬溫暖口吻稱呼你。
+      </p>
+
+      <div class="space-y-3">
+        <div>
+          <label class="block text-xs font-bold text-stone-700 mb-1">該怎麼稱呼你？</label>
+          <input type="text" id="inputNickname" placeholder="例如：谷谷、阿光" class="w-full px-3.5 py-2 text-sm bg-sand-50 rounded-xl border border-sand-200 focus:outline-none focus:ring-2 focus:ring-amber-500/30">
+        </div>
+        <div>
+          <label class="block text-xs font-bold text-stone-700 mb-1">你來自哪座城市？</label>
+          <input type="text" id="inputHometown" placeholder="例如：台中、高雄、台北" class="w-full px-3.5 py-2 text-sm bg-sand-50 rounded-xl border border-sand-200 focus:outline-none focus:ring-2 focus:ring-amber-500/30">
+        </div>
+        <div>
+          <label class="block text-xs font-bold text-stone-700 mb-1">目前的角色：</label>
+          <select id="inputIdentity" class="w-full px-3.5 py-2 text-sm bg-sand-50 rounded-xl border border-sand-200 focus:outline-none focus:ring-2 focus:ring-amber-500/30">
+            <option value="清大/陽交大 異鄉研究生">清大/陽交大 異鄉研究生</option>
+            <option value="大專院校 外地大一生">大專院校 外地大一生</option>
+            <option value="竹科 北漂新鮮工程師">竹科 北漂新鮮工程師</option>
+            <option value="新竹 獨立生活漫遊者">新竹 獨立生活漫遊者</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="pt-3 flex justify-end space-x-2">
+        <button onclick="closeProfileModal()" class="px-4 py-2 text-xs font-bold text-stone-500 hover:text-stone-800">取消</button>
+        <button onclick="saveProfile()" class="px-5 py-2 bg-amber-600 hover:bg-amber-700 text-white text-xs font-bold rounded-xl shadow-md shadow-amber-600/20">保存名片</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ================= MODAL: 發起微光同行邀約 (支援多元標籤 + 自創選項) ================= -->
+  <div id="hangoutModal" class="fixed inset-0 bg-stone-900/50 backdrop-blur-xs z-50 flex items-center justify-center p-4 hidden">
+    <div class="bg-white rounded-2xl max-w-md w-full p-6 shadow-2xl border border-sand-200 space-y-4">
+      <div class="flex justify-between items-center border-b border-sand-100 pb-3">
+        <h3 class="font-serif font-bold text-lg text-stone-900 flex items-center gap-2">
+          <i class="fa-solid fa-bullhorn text-amber-600"></i>
+          <span>發起漫遊同行倡議</span>
+        </h3>
+        <button onclick="closeHangoutModal()" class="text-stone-400 hover:text-stone-700"><i class="fa-solid fa-xmark"></i></button>
+      </div>
+
+      <div class="space-y-3.5">
+        <div>
+          <label class="block text-xs font-bold text-stone-700 mb-1">想去哪裡？</label>
+          <input type="text" id="hangoutPlace" placeholder="例如：南寮魚鱗天梯、暗室微光吃布丁、西市汕頭館吃火鍋" class="w-full px-3.5 py-2 text-sm bg-sand-50 rounded-xl border border-sand-200 focus:outline-none focus:ring-2 focus:ring-amber-500/30">
+        </div>
+        <div>
+          <label class="block text-xs font-bold text-stone-700 mb-1">預計時間：</label>
+          <input type="text" id="hangoutTime" placeholder="例如：今晚 19:30、這週五下班後" class="w-full px-3.5 py-2 text-sm bg-sand-50 rounded-xl border border-sand-200 focus:outline-none focus:ring-2 focus:ring-amber-500/30">
+        </div>
+        
+        <!-- 同行氛圍默契：多元選項 + 自創選項 -->
+        <div>
+          <label class="block text-xs font-bold text-stone-700 mb-1">同行氛圍默契（多種情境可選）：</label>
+          <select id="hangoutTagSelect" onchange="handleTagSelectChange(this)" class="w-full px-3.5 py-2 text-xs bg-sand-50 rounded-xl border border-sand-200 focus:outline-none focus:ring-2 focus:ring-amber-500/30 font-medium text-stone-800">
+            <option value="#打卡拍照互相幫忙掌鏡">#打卡拍照互相幫忙掌鏡 (拍照打卡)</option>
+            <option value="#老屋咖啡各自用筆電不尬聊">#老屋咖啡各自用筆電不尬聊 (工作/自習)</option>
+            <option value="#十八尖山慢活散步吹風">#十八尖山慢活散步吹風 (自然漫遊)</option>
+            <option value="#大口吃肉各自點餐各付各的">#大口吃肉各自點餐各付各的 (聚餐放肆)</option>
+            <option value="#安靜同桌吃火鍋不尷尬">#安靜同桌吃火鍋不尷尬 (溫暖熱湯)</option>
+            <option value="#放肆小酌各喝各的不勸酒">#放肆小酌各喝各的不勸酒 (居酒屋放鬆)</option>
+            <option value="#十七公里海岸線休閒騎單車">#十七公里海岸線休閒騎單車 (戶外吹風)</option>
+            <option value="#城隍廟快吃排隊小吃不逗留">#城隍廟快吃排隊小吃不逗留 (純粹吃美食)</option>
+            <option value="#單純散步吹風戴耳機">#單純散步吹風戴耳機 (各自發呆)</option>
+            <option value="__CUSTOM__">✏️ 自創自訂默契標籤...</option>
+          </select>
+
+          <!-- 自創選項輸入框 -->
+          <div id="customTagWrapper" class="mt-2 hidden">
+            <div class="relative">
+              <span class="absolute left-3 top-2 text-amber-600 font-bold text-xs">#</span>
+              <input type="text" id="hangoutCustomTagInput" placeholder="輸入你想約定的默契，例如：各自看書不聊天、吃完即解散" class="w-full pl-7 pr-3 py-1.5 text-xs bg-amber-50/50 rounded-xl border border-amber-300 focus:outline-none focus:ring-2 focus:ring-amber-500/30 text-stone-800">
+            </div>
+            <p class="text-[10px] text-amber-700 mt-1">✨ 自創標籤會即時掛在公佈欄卡片上，讓志同道合的朋友一眼看懂！</p>
+          </div>
+        </div>
+      </div>
+
+      <div class="pt-3 flex justify-end space-x-2">
+        <button onclick="closeHangoutModal()" class="px-4 py-2 text-xs font-bold text-stone-500 hover:text-stone-800">取消</button>
+        <button onclick="submitNewHangout()" class="px-5 py-2 bg-amber-600 hover:bg-amber-700 text-white text-xs font-bold rounded-xl shadow-md shadow-amber-600/20">發佈至公佈欄</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ================= MODAL: 編輯收藏備忘筆記與標籤 ================= -->
+  <div id="noteModal" class="fixed inset-0 bg-stone-900/50 backdrop-blur-xs z-50 flex items-center justify-center p-4 hidden">
+    <div class="bg-white rounded-2xl max-w-md w-full p-6 shadow-2xl border border-sand-200 space-y-4">
+      <div class="flex justify-between items-center border-b border-sand-100 pb-3">
+        <h3 class="font-serif font-bold text-lg text-stone-900 flex items-center gap-2">
+          <i class="fa-solid fa-pen-nib text-amber-600"></i>
+          <span>編輯私房筆記與標籤</span>
+        </h3>
+        <button onclick="closeNoteModal()" class="text-stone-400 hover:text-stone-700"><i class="fa-solid fa-xmark"></i></button>
+      </div>
+
+      <input type="hidden" id="editBookmarkId">
+
+      <div class="space-y-3">
+        <div>
+          <label class="block text-xs font-bold text-stone-700 mb-1">私房筆記 (Notes)：</label>
+          <textarea id="editBookmarkNote" rows="3" class="w-full px-3.5 py-2 text-sm bg-sand-50 rounded-xl border border-sand-200 focus:outline-none focus:ring-2 focus:ring-amber-500/30" placeholder="寫下個人備忘，如：夕陽超美、焦糖布丁香濃、需提前排隊..."></textarea>
+        </div>
+        <div>
+          <label class="block text-xs font-bold text-stone-700 mb-1">標籤 (以逗點分開)：</label>
+          <input type="text" id="editBookmarkTags" placeholder="#打卡秘境 #放肆大吃 #犒賞自己" class="w-full px-3.5 py-2 text-sm bg-sand-50 rounded-xl border border-sand-200 focus:outline-none focus:ring-2 focus:ring-amber-500/30">
+        </div>
+      </div>
+
+      <div class="pt-3 flex justify-end space-x-2">
+        <button onclick="closeNoteModal()" class="px-4 py-2 text-xs font-bold text-stone-500 hover:text-stone-800">取消</button>
+        <button onclick="saveBookmarkNote()" class="px-5 py-2 bg-stone-900 hover:bg-stone-800 text-white text-xs font-bold rounded-xl">儲存筆記</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ================= JAVASCRIPT 全邏輯 ================= -->
+  <script>
+    /* 1. 安全 LocalStorage 輔助函式 */
+    function safeGetJSON(key, defaultVal) {
+      try {
+        const item = localStorage.getItem(key);
+        return item ? JSON.parse(item) : defaultVal;
+      } catch (e) {
+        console.warn('LocalStorage parse error for:', key, e);
+        return defaultVal;
+      }
+    }
+
+    /* 2. 全域資料庫（新竹在地 34 處精選地點） */
+    const DEFAULT_PROFILE = {
+      nickname: '谷谷',
+      hometown: '台中',
+      identity: '清大/陽交大 異鄉研究生'
+    };
+
+    const HSINCHU_SPOTS = [
+      /* --- 📸 打卡熱點 (photo) --- */
+      {
+        id: 's_photo_fishscale',
+        name: '南寮漁港 · 魚鱗天梯',
+        cat: 'photo',
+        rating: '4.4',
+        reviews: '8,200+',
+        address: '新竹市北區新港路 (南寮遊客中心旁海岸線)',
+        tag: '#網美落日階梯 #海浪消波美學 #南寮打卡地標',
+        lat: 24.8492,
+        lng: 120.9275,
+        desc: '以白色魚鱗造型消波塊層疊而成的濱海親水天梯。傍晚坐在石階上海風徐徐，夕陽將海面染成一片耀眼金黃，是新竹最具辨識度的美照打卡聖地。'
+      },
+      {
+        id: 's_photo_tofu',
+        name: '頭前溪豆腐岩',
+        cat: 'photo',
+        rating: '4.3',
+        reviews: '3,600+',
+        address: '新竹市東區頭前溪水域 (竹北興隆路交界水岸)',
+        tag: '#方形消波幾何美學 #潺潺流水石塊 #私房攝影秘境',
+        lat: 24.8140,
+        lng: 121.0260,
+        desc: '頭前溪河床整齊排列的方形消波塊，如同一塊塊方形豆腐漂浮水面。水流在石塊間穿梭，晨光或暮色倒映下極具幾何對稱美感，吸引無數攝影愛好者打卡。'
+      },
+      {
+        id: 's_photo_general',
+        name: '將軍村開放圖書資訊園區',
+        cat: 'photo',
+        rating: '4.4',
+        reviews: '2,900+',
+        address: '新竹市東區金城一路69號',
+        tag: '#將軍眷村聚落 #老樹紅磚文創 #週末文青市集',
+        lat: 24.7985,
+        lng: 121.0068,
+        desc: '昔日金城新村將軍眷舍修繕改造的藝文聚落。紅磚黑瓦保留了歲月斑駁痕跡，園區綠意盎然，不定期舉辦文創市集與生活展演，漫步拍照極具復古情調。'
+      },
+
+      /* --- 🌿 漫遊景點 (roam) --- */
+      {
+        id: 's_roam_18peaks',
+        name: '十八尖山公園 · 綠意林蔭步道',
+        cat: 'roam',
+        rating: '4.6',
+        reviews: '7,100+',
+        address: '新竹市東區博愛街5巷 (主要登山口)',
+        tag: '#新竹之肺 #平緩林蔭步道 #市民漫遊散步聖地',
+        lat: 24.7935,
+        lng: 120.9880,
+        desc: '新竹市民最愛的後花園。步道全線平緩鋪設且綠蔭濃密，沿途設有涼亭與觀景台，微風徐徐、四季花香，是剛到新竹想活動筋骨、遠離喧囂的最佳自然步道。'
+      },
+      {
+        id: 's_roam_grass',
+        name: '香山青青草原',
+        cat: 'roam',
+        rating: '4.5',
+        reviews: '6,800+',
+        address: '新竹市香山區草原路',
+        tag: '#19公頃廣袤大草坪 #磨石子超長溜滑梯 #山海微風放空',
+        lat: 24.7645,
+        lng: 120.9230,
+        desc: '佔地廣達十九公頃的壯麗開闊草原，起伏的山丘與藍天相映成趣。漫步在草原步道能遠眺香山海岸線，適合週末帶塊野餐墊吹風放空一整天。'
+      },
+
+      /* --- ☕ 人氣老屋咖啡 (cafe) --- */
+      {
+        id: 's_cafe_dark',
+        name: '暗室微光 In the Dark',
+        cat: 'cafe',
+        rating: '4.6',
+        reviews: '1,300+',
+        address: '新竹市東區勝利路97號 (近火車站商圈巷弄)',
+        tag: '#低調木質老宅 #大人味焦糖布丁 #深夜人氣咖啡館',
+        lat: 24.8023,
+        lng: 120.9698,
+        desc: '藏身火車站旁勝利路巷弄的溫暖老宅咖啡館。室內昏黃微光極具包容感，招牌手工焦糖布丁與單品手沖香醇細緻，營業至深夜，是夜貓子的心靈綠洲。'
+      },
+      {
+        id: 's_cafe_godspeed',
+        name: '吉十咖啡 GODSPEED Cafe & Bakery',
+        cat: 'cafe',
+        rating: '4.6',
+        reviews: '1,700+',
+        address: '新竹市北區中華路三段56號',
+        tag: '#全台必吃頂級肉桂捲 #特色可頌鬆餅 #咖啡烘焙職人',
+        lat: 24.8075,
+        lng: 120.9675,
+        desc: '被眾多甜點老饕封為新竹最強的肉桂捲名店。老宅改造的工業風空間，供應多款風味濃郁的手工肉桂捲與極致手沖，下午茶時段人氣極旺。'
+      },
+      {
+        id: 's_cafe_inn',
+        name: '影咖啡 Inn Caffe (將軍村店)',
+        cat: 'cafe',
+        rating: '4.7',
+        reviews: '850+',
+        address: '新竹市東區金城一路67號 (將軍村眷村園區旁)',
+        tag: '#相機鏡頭造型杯 #眷村美學金磚布丁 #攝影主題咖啡',
+        lat: 24.7982,
+        lng: 121.0062,
+        desc: '以攝影為主題的質感風格咖啡館，坐落於將軍村歷史建物旁。店內招牌相機鏡頭造型咖啡杯與濃郁金磚布丁極具辨識度，打卡與品味兼具。'
+      },
+      {
+        id: 's_shin',
+        name: '辛志平校長故居 (Taivii / 後院咖啡)',
+        cat: 'cafe',
+        rating: '4.7',
+        reviews: '1,850+',
+        address: '新竹市東區東門街32號 (新竹火車站步行約 5 分鐘)',
+        tag: '#百年日式木造 #安靜有插座 #日式庭園',
+        lat: 24.8016,
+        lng: 120.9734,
+        desc: '日治時期校長官邸古蹟，後院老宅咖啡館極具穿透感。陽光穿過木格窗灑在榻榻米上，非常適合帶筆電專心工作或安靜放空。'
+      },
+      {
+        id: 's_lee',
+        name: '李克承博士故居 a-moom',
+        cat: 'cafe',
+        rating: '4.6',
+        reviews: '1,220+',
+        address: '新竹市北區勝利路199號 (大遠百商圈巷弄深處)',
+        tag: '#黑瓦日式老宅 #招牌生吐司 #極致幽靜',
+        lat: 24.8018,
+        lng: 120.9673,
+        desc: '新竹首位醫學博士故居，隱身在熱鬧市區的安靜綠蔭中。脫鞋入內能聞到淡淡檜木香氣，是獨自閱讀與安靜打電腦的最佳庇護所。'
+      },
+      {
+        id: 's_float',
+        name: '微生 Float Dept.',
+        cat: 'cafe',
+        rating: '4.5',
+        reviews: '1,410+',
+        address: '新竹市東區民權路111巷2-1號 (近巨城購物中心)',
+        tag: '#老洋房改建 #手沖咖啡 #文青工作聖地',
+        lat: 24.8092,
+        lng: 120.9738,
+        desc: '老洋房重修的天井綠植咖啡館，自然採光極美。二樓設有木質長桌與席地座位，提供美味飯糰與單品手沖，深夜也適合自習工作。'
+      },
+
+      /* --- 🍲 1/3 火鍋精選 Top 3 (hotpot) --- */
+      {
+        id: 's_pot_shantou',
+        name: '西市汕頭館（總店）',
+        cat: 'hotpot',
+        rating: '4.2',
+        reviews: '4,500+',
+        address: '新竹市北區西安街70號 (城隍廟西門市場巷內)',
+        tag: '#百年老店 #獨門沙茶 #溫體牛肉鍋',
+        lat: 24.8035,
+        lng: 120.9670,
+        desc: '新竹傳承百年的溫體牛沙茶火鍋老店。大骨與扁魚熬製的清甜湯頭，搭上香氣濃郁的自製古法沙茶醬，手切牛肉涮下幾秒即化，是犒賞自己的熱燙第一選。'
+      },
+      {
+        id: 's_pot_magma',
+        name: '岩漿火鍋（新竹經國店）',
+        cat: 'hotpot',
+        rating: '4.8',
+        reviews: '3,200+',
+        address: '新竹市北區東大路二段78號',
+        tag: '#漢方麻辣 #鴨血豆腐無限續 #竹科聚餐首選',
+        lat: 24.8142,
+        lng: 120.9620,
+        desc: '竹科工程師聚餐與放肆大吃的頂級麻辣鍋名店。漢方溫補湯頭香麻而不嗆辣，手撕滑嫩鴨血與厚切豆腐可無限續加，大口吃肉的最佳選擇。'
+      },
+      {
+        id: 's_pot_weilu',
+        name: '韋爐復刻食鍋（新竹店）',
+        cat: 'hotpot',
+        rating: '4.7',
+        reviews: '1,900+',
+        address: '新竹市東區民生路109號 (近巨城商圈)',
+        tag: '#爆炒石頭鍋 #復古柑仔店 #大盤肉吃到飽足',
+        lat: 24.8090,
+        lng: 120.9750,
+        desc: '以洋蔥、麻油爆炒的古早味石頭火鍋，香氣撲鼻。店內滿滿懷舊復古氛圍，大肉盤份量豪邁，最適合找朋友一起大口吃肉、宣洩一週壓力。'
+      },
+
+      /* --- 🥩 1/3 牛排精選 Top 3 (steak) --- */
+      {
+        id: 's_steak_beefroom',
+        name: '牛室炙燒牛排（新竹巨城店）',
+        cat: 'steak',
+        rating: '4.6',
+        reviews: '6,800+',
+        address: '新竹市東區中央路236號 (巨城購物中心對面)',
+        tag: '#排餐加披薩Buffet吃到飽 #巨城商圈 #大口吃肉聚餐',
+        lat: 24.8096,
+        lng: 120.9752,
+        desc: '新竹超高人氣平價排餐首選。點一份炙燒原塊牛排，即可無限享用手工現烤熱騰騰披薩、現炒熱菜、炸物與冰淇淋自助吧，放肆吃到飽的首選。'
+      },
+      {
+        id: 's_steak_stanley',
+        name: '史坦利美式牛排 Stanley’s Steakhouse',
+        cat: 'steak',
+        rating: '4.4',
+        reviews: '2,800+',
+        address: '新竹市東區民生路99號',
+        tag: '#炭烤厚切雪花牛 #美式經典風味 #排隊名店',
+        lat: 24.8080,
+        lng: 120.9740,
+        desc: '老牌美式炭烤厚切牛排名店。炭火直烤鎖住飽滿肉汁，搭配酥脆薯條與特製炭烤蔬菜，肉質鮮嫩有嚼勁，想專注品嚐美味牛肉時絕不踩雷。'
+      },
+      {
+        id: 's_steak_hou',
+        name: '吼牛排（新竹中華店）',
+        cat: 'steak',
+        rating: '4.5',
+        reviews: '1,500+',
+        address: '新竹市東區中華路二段3號',
+        tag: '#大盎司大份量 #原塊牛排 #學生平價飽足',
+        lat: 24.8020,
+        lng: 120.9785,
+        desc: '主打 20 盎司至 40 盎司巨無霸大盎司原塊牛排，搭配豐富的玉米濃湯與吐司飲料無限享用，是異地求學學生想豪邁大口吞肉的性價比之王。'
+      },
+
+      /* --- 🥢 1/3 在地小吃 Top 3 (snack) --- */
+      {
+        id: 's_snack_duckrice',
+        name: '新竹廟口鴨香飯',
+        cat: 'snack',
+        rating: '4.3',
+        reviews: '11,000+',
+        address: '新竹市北區中山路142號 (近城隍廟)',
+        tag: '#炭燻去骨鴨肉 #獨門鴨油黑胡椒 #半熟荷包蛋',
+        lat: 24.8025,
+        lng: 120.9658,
+        desc: '新竹名氣最響亮的在地熱食代表。煙燻去骨鴨肉鋪在熱白飯上，淋上獨門紅蔥鴨油與黑胡椒香氣，加點一顆半熟蛋戳破拌飯，熱騰騰大口扒飯超撫慰。'
+      },
+      {
+        id: 's_snack_mifen',
+        name: '西市米粉湯 / 阿城號米粉',
+        cat: 'snack',
+        rating: '4.4',
+        reviews: '3,500+',
+        address: '新竹市北區中山路75號 (城隍廟戲台下)',
+        tag: '#百年細米粉 #黑金古早肉燥 #扎實手工貢丸',
+        lat: 24.8029,
+        lng: 120.9663,
+        desc: '城隍廟內百年傳承古早味，彈牙細緻的新竹炊粉淋上紅蔥頭肉燥與蒜泥，配上一碗彈牙手工貢丸湯，吃一口就能體驗在地日常底蘊。'
+      },
+      {
+        id: 's_snack_ducknoodle',
+        name: '原夜市鴨肉麵',
+        cat: 'snack',
+        rating: '4.2',
+        reviews: '5,200+',
+        address: '新竹市東區中央路30號',
+        tag: '#大火炒鴨血 #黑醋酸香 #煙燻鴨肉炒麵',
+        lat: 24.8052,
+        lng: 120.9680,
+        desc: '在地老饕深夜必吃的鴨肉老店。招牌快炒鴨血帶有濃郁黑醋酸香與蒜苗香氣，滑嫩多汁；配上一盤鍋氣十足的煙燻鴨肉炒麵，撫慰飢腸轆轆的胃。'
+      },
+
+      /* --- 🍺 放肆小酌居酒屋 (bar) --- */
+      {
+        id: 's_bar_uncle',
+        name: '大叔酒食炭火一頭牛',
+        cat: 'bar',
+        rating: '4.6',
+        reviews: '1,680+',
+        address: '新竹市北區北大路92巷43號 (近演藝廳巷弄)',
+        tag: '#炭火串燒 #生啤酒 #深夜小酌解壓',
+        lat: 24.8062,
+        lng: 120.9678,
+        desc: '隱身在老宅巷弄的炭火串燒居酒屋，氣氛熱絡而不吵雜。生啤酒冰涼順口，串燒火候極佳，是異鄉人下班下課後大口吃肉大口喝酒的避風港。'
+      },
+      {
+        id: 's_bar_yinjyu',
+        name: '隱居居酒屋 (新竹店)',
+        cat: 'bar',
+        rating: '4.8',
+        reviews: '2,420+',
+        address: '新竹市東區大同路103號 (近東門圓環)',
+        tag: '#日式屋台氛圍 #生啤嗨棒 #宵夜聚會',
+        lat: 24.8048,
+        lng: 120.9695,
+        desc: '三層樓日式老屋改建，門口掛著紅色燈籠與櫻花造景。提供多款日式清酒、生啤酒與現烤串燒，想找朋友放肆暢飲或一個人吧台微醺都自在。'
+      },
+      {
+        id: 's_bar_tiefu',
+        name: '鐵釜日式料理居酒屋',
+        cat: 'bar',
+        rating: '4.7',
+        reviews: '960+',
+        address: '新竹市北區少年街41號',
+        tag: '#釜飯料理 #特色串燒 #低調微醺酒館',
+        lat: 24.8105,
+        lng: 120.9632,
+        desc: '以招牌釜飯與炭烤牛舌聞名的精緻居酒屋。昏黃溫暖的燈光配上一杯爽快的生啤，撫平所有在異鄉生活積累的緊繃情緒。'
+      },
+
+      /* --- 🚲 輕鬆愜意腳踏車路線 (bike) --- */
+      {
+        id: 's_bike_17km',
+        name: '十七公里海岸線自行車道',
+        cat: 'bike',
+        rating: '4.6',
+        reviews: '6,200+',
+        address: '新竹市北區海濱路173號 (起點南寮漁港至香山沙丘)',
+        tag: '#海風吹拂 #夕陽美景 #五座特色彩虹橋',
+        lat: 24.8290,
+        lng: 120.9250,
+        desc: '北台灣最經典濱海單車道。沿著台灣海峽騎乘，途經港南運河、彩虹橋與香山濕地，一路上九降風吹走所有煩悶，傍晚夕陽更是一絕。'
+      },
+      {
+        id: 's_bike_leftbank',
+        name: '頭前溪左岸自行車道',
+        cat: 'bike',
+        rating: '4.5',
+        reviews: '1,400+',
+        address: '新竹市東區中華路一段 (頭前溪水岸綠廊)',
+        tag: '#平緩平坦 #遠離車流 #河岸綠地散步騎乘',
+        lat: 24.8180,
+        lng: 121.0180,
+        desc: '穿梭新竹市與竹北水岸的開闊自行車道，平緩好騎且完全不受市區紅綠燈干擾，沿途有廣闊草坪與豆腐岩水聲，適合午後愜意騎乘。'
+      },
+      {
+        id: 's_bike_greenlake',
+        name: '青草湖環湖單車步道',
+        cat: 'bike',
+        rating: '4.4',
+        reviews: '2,100+',
+        address: '新竹市東區明湖路1075巷',
+        tag: '#環湖微風 #鳳凰橋畔 #山光水色放空',
+        lat: 24.7745,
+        lng: 120.9715,
+        desc: '新竹近郊的寧靜湖泊，環湖步道綠樹成蔭、微風徐徐。騎著單車環繞一圈僅約 2 公里，路程輕鬆愜意，適合想短暫遠離市區時的微旅行。'
+      },
+
+      /* --- 🚌 愜意自由行公車路線 (bus) --- */
+      {
+        id: 's_bus_line1',
+        name: '新竹客運 1 路公車 (竹塹大動脈)',
+        cat: 'bus',
+        rating: '4.8',
+        reviews: '外地生活神線',
+        address: '起訖站：新竹火車站 ⇄ 清華大學 ⇄ 陽明交通大學 ⇄ 竹中',
+        tag: '#班次密集 #10分鐘一班 #清交外地學子必備',
+        lat: 24.8015,
+        lng: 120.9718,
+        desc: '新竹最重要的交通幹線公車，尖峰 10~15 分鐘一班。串聯市區、東門市場、大同路商圈、清大與交大，即使沒機車也能無腦穿梭新竹生活圈。'
+      },
+      {
+        id: 's_bus_bigcity',
+        name: 'Big City 巨城免費接駁專車',
+        cat: 'bus',
+        rating: '4.7',
+        reviews: '避風雨購物必備',
+        address: '新竹火車站 (站前SOGO旁) ⇄ Big City 遠東巨城購物中心',
+        tag: '#免費搭乘 #約15分鐘一班 #雨天風大避難所',
+        lat: 24.8098,
+        lng: 120.9745,
+        desc: '每逢風大雨大或假日想逛街吃飯，巨城免費接駁車是異鄉人最便利的選擇。10分鐘直達巨城商圈，美食街、威秀影城與各大餐廳一應俱全。'
+      },
+      {
+        id: 's_bus_shishan',
+        name: '台灣好行 5700 獅山線 (假日散策)',
+        cat: 'bus',
+        rating: '4.6',
+        reviews: '近郊一日遊推薦',
+        address: '竹北高鐵站發車 ⇄ 竹東遊客中心 ⇄ 綠世界 ⇄ 北埔老街',
+        tag: '#假日漫遊 #免開車客家風情 #一日輕旅行',
+        lat: 24.8080,
+        lng: 121.0400,
+        desc: '假日想離開市區透透氣的最佳選擇。刷悠遊卡即可輕鬆抵達北埔老街喝擂茶、品嚐客家小吃，是異鄉人探索新竹近郊歷史與自然的黃金路線。'
+      },
+
+      /* --- 🏛️ 新竹風與歷史文化景點 (history) --- */
+      {
+        id: 's_his_dongmen',
+        name: '新竹東門城（迎曦門）與護城河綠廊',
+        cat: 'history',
+        rating: '4.6',
+        reviews: '5,600+',
+        address: '新竹市東區東門圓環 (中正路與東門街交叉口)',
+        tag: '#二百年清代古城門 #歷史地標 #地下道青年活力',
+        lat: 24.8038,
+        lng: 120.9715,
+        desc: '建於清道光年間的竹塹城唯一留存城門，兩百年來佇立在風中見證新竹變遷。環繞城門的護城河綠意盎然，是歷史古蹟與現代漫步生活的核心。'
+      },
+      {
+        id: 's_his_prefecture',
+        name: '新竹州廳（新竹市政府）',
+        cat: 'history',
+        rating: '4.7',
+        reviews: '1,800+',
+        address: '新竹市北區中正路120號',
+        tag: '#國定古蹟 #大正時期和洋融合 #紅磚木構美學',
+        lat: 24.8066,
+        lng: 120.9688,
+        desc: '日治大正時期完成的近代官署古蹟。紅磚搭配木質斜屋頂，外觀典雅肅穆，內部至今仍作為辦公空間，夜間點燈後散步其間更顯古城靜謐風華。'
+      },
+      {
+        id: 's_his_northst',
+        name: '北門老街與長和宮（外媽祖）',
+        cat: 'history',
+        rating: '4.6',
+        reviews: '2,300+',
+        address: '新竹市北區北門街135號',
+        tag: '#竹塹第一商街 #清代建築雕刻 #水潤餅老字號',
+        lat: 24.8095,
+        lng: 120.9650,
+        desc: '新竹發展最早的清代商街，長和宮保存了珍貴的歷史文物與媽祖真髮。漫步北門街能買到新竹特有的傳統點心「水潤餅」，充滿濃厚歷史人情味。'
+      },
+
+      /* --- 🌊 散步放空 (walk) --- */
+      {
+        id: 's_walk_river',
+        name: '新竹護城河親水公園',
+        cat: 'walk',
+        rating: '4.6',
+        reviews: '4,300+',
+        address: '新竹市東區中央路與府後街交界',
+        tag: '#親水流水 #綠蔭石階 #傍晚吹風散心',
+        lat: 24.8041,
+        lng: 120.9702,
+        desc: '全台灣僅存最完整的清代護城河，兩岸老樹垂柳倒映水面。買杯熱茶坐在石階邊吹風看流水，聽著潺潺水聲，能瞬間舒緩適應新城市的緊繃。'
+      },
+      {
+        id: 's_walk_crab',
+        name: '香山濕地 · 賞蟹步道',
+        cat: 'walk',
+        rating: '4.6',
+        reviews: '5,800+',
+        address: '新竹市香山區中華路五段320巷35號',
+        tag: '#心型石滬步道 #海風夕陽 #潮間帶漫步',
+        lat: 24.7760,
+        lng: 120.9080,
+        desc: '沿著心形木棧道深入潮間帶，被遼闊的大海與微風環抱。傍晚時分金黃色陽光灑在濕地上，倒映出天空鏡面，是沉澱心靈的絕美散步路線。'
+      }
+    ];
+
+    const QUEST_POOL = [
+      { id: 'q_photo', type: 'practical', title: '魚鱗天梯的金色落日', desc: '騎車前往南寮魚鱗天梯，坐在消波階梯上看著夕陽染黃海浪，拍下一張送給自己的打卡美照。', spotId: 's_photo_fishscale' },
+      { id: 'q_roam', type: 'practical', title: '十八尖山的森呼吸漫遊', desc: '穿上好走的布鞋，走進新竹之肺十八尖山林蔭步道，深吸幾口芬多精，讓綠意洗去煩悶。', spotId: 's_roam_18peaks' },
+      { id: 'q_cafe', type: 'practical', title: '老宅裡的焦糖布丁儀式', desc: '走進暗室微光點一份大人味焦糖布丁與手沖單品，在昏黃微光中帶上筆電享受不被打擾的午後。', spotId: 's_cafe_dark' },
+      { id: 'q_hotpot', type: 'practical', title: '百年沙茶熱火鍋的療癒', desc: '走進城隍廟西門市場，點上一鍋大骨扁魚沙茶火鍋與手切溫體牛，讓滾燙的熱湯驅散新竹強勁的風與一週疲累。', spotId: 's_pot_shantou' },
+      { id: 'q_steak', type: 'practical', title: '大口吃肉！牛排與披薩的放肆犒賞', desc: '走進巨城對面的牛室牛排，點份炭香牛排，披薩、熱炒與濃湯無限享用，給辛苦努力生活的自己最純粹的飽足。', spotId: 's_steak_beefroom' },
+      { id: 'q_snack', type: 'practical', title: '城隍廟鴨香飯的在地儀式', desc: '走進中山路點一碗熱騰騰的煙燻鴨香飯，戳破半熟蛋拌入黑胡椒鴨油，讓每一口米飯撫慰飢腸轆轆的身心。', spotId: 's_snack_duckrice' },
+      { id: 'q_bike', type: 'practical', title: '十七公里海岸線的追風騎行', desc: '租一台單車，迎著台灣海峽的海風漫騎，穿過彩虹橋看著夕陽漸漸沉入海平面。', spotId: 's_bike_17km' }
+    ];
+
+    const DEFAULT_HANGOUTS = [
+      { id: 'h1', creator: '阿光 (高雄 / 工程師)', place: '南寮漁港 · 魚鱗天梯看夕陽', time: '週六下午 17:00', tag: '#打卡拍照互相幫忙掌鏡', count: 3, users: ['阿光 (高雄)', '小安 (台北)', '大飛 (桃園)'] },
+      { id: 'h2', creator: '庭萱 (台南 / 學生)', place: '暗室微光吃焦糖布丁', time: '週五晚上 19:30', tag: '#老屋咖啡各自用筆電不尬聊', count: 2, users: ['庭萱 (台南)', '谷谷 (台中)'] }
+    ];
+
+    // 全域安全狀態
+    let state = {
+      profile: safeGetJSON('nestwind_profile', DEFAULT_PROFILE),
+      mode: 'explore',
+      currentQuest: QUEST_POOL[0],
+      diaries: safeGetJSON('nestwind_diaries', [
+        {
+          id: 1729100000000,
+          date: '10月16日',
+          mood: '孤單 🌧️',
+          location: '南寮漁港 · 魚鱗天梯',
+          content: '剛開學課業好重，傍晚一個人騎車到南寮吹風，看著夕陽突然很想念家鄉...',
+          reply: '新竹的九降風雖然急躁，但夕陽海景始終包容著所有人。辛苦了谷谷，你正在勇敢開拓屬於自己的生活。'
+        }
+      ]),
+      hangouts: safeGetJSON('nestwind_hangouts', DEFAULT_HANGOUTS),
+      bookmarks: safeGetJSON('nestwind_bookmarks', [
+        { ...HSINCHU_SPOTS[0], note: '白色消波塊如魚鱗，傍晚落日絕美', userTags: ['#打卡景點', '#落日夕陽', '#海風'] },
+        { ...HSINCHU_SPOTS[5], note: '老宅氛圍極好，大人味焦糖布丁必吃', userTags: ['#老屋咖啡', '#布丁', '#深夜'] },
+        { ...HSINCHU_SPOTS[11], note: '百年沙茶牛肉爐，湯頭鮮甜必點溫體牛', userTags: ['#火鍋', '#沙茶鍋', '#放肆大吃'] }
+      ]),
+      completedQuestIds: safeGetJSON('nestwind_completed_quests', [])
+    };
+
+    /* 3. 核心啟動生命週期 */
+    let mapInstance = null;
+    let mapMarkers = [];
+
+    function startApp() {
+      try {
+        updateProfileDisplay();
+        initChat();
+        renderQuestCard();
+        renderDiaries();
+        renderHangouts();
+        renderBookmarks();
+        setTimeout(() => {
+          initMap();
+        }, 150);
+      } catch (err) {
+        console.error('App init error:', err);
+      }
+    }
+
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', startApp);
+    } else {
+      startApp();
+    }
+
+    // 吐司提示函式 (Toast)
+    function showToast(message, icon = 'fa-circle-check') {
+      const toast = document.getElementById('toastNotification');
+      const msgEl = document.getElementById('toastMsg');
+      const iconEl = document.getElementById('toastIcon');
+      if (!toast || !msgEl || !iconEl) return;
+
+      msgEl.innerText = message;
+      iconEl.className = `fa-solid ${icon} text-amber-400`;
+
+      toast.classList.remove('translate-y-16', 'opacity-0');
+      toast.classList.add('translate-y-0', 'opacity-100');
+
+      setTimeout(() => {
+        toast.classList.add('translate-y-16', 'opacity-0');
+        toast.classList.remove('translate-y-0', 'opacity-100');
+      }, 2600);
+    }
+
+    // 頁籤切換邏輯
+    function switchTab(tabId) {
+      const views = ['chat', 'quest', 'map', 'diary', 'hangout', 'bookmarks'];
+      views.forEach(v => {
+        const el = document.getElementById(`view-${v}`);
+        const btn = document.getElementById(`tabBtn-${v}`);
+        if (!el || !btn) return;
+
+        if (v === tabId) {
+          el.classList.remove('hidden');
+          btn.classList.add('border-amber-600', 'text-amber-700', 'font-bold');
+          btn.classList.remove('border-transparent', 'text-stone-500');
+        } else {
+          el.classList.add('hidden');
+          btn.classList.remove('border-amber-600', 'text-amber-700', 'font-bold');
+          btn.classList.add('border-transparent', 'text-stone-500');
+        }
+      });
+
+      if (tabId === 'map') {
+        if (!mapInstance) {
+          initMap();
+        } else {
+          setTimeout(() => {
+            mapInstance.invalidateSize();
+          }, 250);
+        }
+      }
+    }
+
+    /* 4. 異鄉人名片系統 */
+    function updateProfileDisplay() {
+      const text = `來自${state.profile.hometown}的${state.profile.nickname}`;
+      const badge = document.getElementById('badgeProfileText');
+      if (badge) badge.innerText = text;
+    }
+
+    function openProfileModal() {
+      document.getElementById('inputNickname').value = state.profile.nickname;
+      document.getElementById('inputHometown').value = state.profile.hometown;
+      document.getElementById('inputIdentity').value = state.profile.identity;
+      document.getElementById('profileModal').classList.remove('hidden');
+    }
+
+    function closeProfileModal() {
+      document.getElementById('profileModal').classList.add('hidden');
+    }
+
+    function saveProfile() {
+      const nickname = document.getElementById('inputNickname').value.trim() || '異鄉朋友';
+      const hometown = document.getElementById('inputHometown').value.trim() || '外地';
+      const identity = document.getElementById('inputIdentity').value;
+
+      state.profile = { nickname, hometown, identity };
+      localStorage.setItem('nestwind_profile', JSON.stringify(state.profile));
+      updateProfileDisplay();
+      closeProfileModal();
+
+      appendSystemMessage(`名片已更新！棲風記住你了，來自${hometown}的${nickname}。`);
+      showToast(`名片已更新：來自${hometown}的${nickname}`);
+    }
+
+    /* 5. 雙重對話模式 */
+    function setMode(mode) {
+      state.mode = mode;
+      const btnExp = document.getElementById('btnModeExplore');
+      const btnTree = document.getElementById('btnModeTreehole');
+      const icon = document.getElementById('modeIcon');
+      const title = document.getElementById('modeTitle');
+      const desc = document.getElementById('modeDesc');
+      const tag = document.getElementById('modeTag');
+
+      if (mode === 'explore') {
+        btnExp.className = "px-4 py-2 rounded-lg bg-amber-600 text-white shadow-sm transition font-bold flex items-center gap-1.5";
+        btnTree.className = "px-4 py-2 rounded-lg text-stone-600 hover:text-stone-900 transition flex items-center gap-1.5";
+        icon.className = "fa-solid fa-compass";
+        title.innerText = "🗺️ 實用地圖探索模式";
+        tag.innerText = "1/3 精選法 · Google 高星好店推薦";
+        tag.className = "text-[11px] bg-amber-100 text-amber-800 font-bold px-2 py-0.5 rounded-full";
+        desc.innerText = "針對打卡熱點、慢活漫遊、老屋咖啡、火鍋、牛排、小吃與居酒屋，精選 Top 3 高星好店並支援實況導航。";
+        showToast('已切換為「地圖探索找店模式」', 'fa-compass');
+      } else {
+        btnTree.className = "px-4 py-2 rounded-lg bg-stone-900 text-white shadow-sm transition font-bold flex items-center gap-1.5";
+        btnExp.className = "px-4 py-2 rounded-lg text-stone-600 hover:text-stone-900 transition flex items-center gap-1.5";
+        icon.className = "fa-solid fa-hand-holding-heart text-amber-600";
+        title.innerText = "💬 心靈樹洞傾聽模式";
+        tag.innerText = "純傾聽 · 同理陪伴";
+        tag.className = "text-[11px] bg-sage-100 text-sage-700 font-bold px-2 py-0.5 rounded-full";
+        desc.innerText = "專注於情感同理與傾聽，不主動打擾推銷，做你在風城安心卸下防備的溫暖朋友。";
+        showToast('已切換為「心靈樹洞陪伴模式」', 'fa-hand-holding-heart');
+      }
+    }
+
+    function initChat() {
+      const chatContainer = document.getElementById('chatMessages');
+      if (!chatContainer) return;
+      chatContainer.innerHTML = '';
+      
+      const welcomeMsg = `
+        <div class="flex items-start gap-3">
+          <div class="w-8 h-8 rounded-full bg-amber-600 text-white flex items-center justify-center text-xs flex-shrink-0 shadow-sm">
+            <i class="fa-solid fa-wind"></i>
+          </div>
+          <div class="space-y-2 max-w-[85%]">
+            <div class="bg-white p-4 rounded-2xl rounded-tl-sm border border-sand-200 shadow-sm text-stone-800 text-sm leading-relaxed space-y-2">
+              <p>嗨，${escapeHtml(state.profile.nickname)}！歡迎來到新竹。我知道離開熟悉的家鄉，在適應兩點一線生活時，偶爾會想「拍照打卡」、「出門漫遊」或「放肆大吃」犒賞自己。</p>
+              <p class="text-xs text-stone-600 bg-sand-50 p-2.5 rounded-xl border border-sand-200">
+                ✨ <b>全向度 1/3 精選推薦</b>：想找<b>「📸 打卡熱點」</b>、<b>「🌿 慢活漫遊」</b>、<b>「☕ 人氣咖啡」</b>、<b>「🍲 熱門火鍋」</b>、<b>「🥩 人氣牛排」</b>、<b>「🥢 城隍廟小吃」</b>、<b>「🍺 居酒屋小酌」</b>、<b>「🚲 愜意單車」</b>、<b>「🚌 自由行公車」</b>或<b>「🏛️ 歷史文化古蹟」</b>，隨時輸入或點擊下方快捷標籤，我會調出新竹 Google 評分最高、各類 Top 3 好店與實況導航！
+              </p>
+            </div>
+            <div class="flex items-center gap-2">
+              <button onclick="speakText('嗨，${escapeHtml(state.profile.nickname)}，今天辛苦了。想去魚鱗天梯吹吹海風、到暗室微光吃焦糖布丁，還是去吃一頓滾燙的沙茶火鍋犒賞自己呢？')" class="text-[11px] text-amber-800 hover:text-amber-900 font-bold flex items-center gap-1 bg-amber-50 px-2.5 py-1 rounded-md border border-amber-200 transition">
+                <i class="fa-solid fa-headphones"></i>
+                <span>🎧 聽聽暖心絮語</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      `;
+      chatContainer.innerHTML = welcomeMsg;
+    }
+
+    function quickSend(text) {
+      const input = document.getElementById('chatInput');
+      if (input) {
+        input.value = text;
+        sendMessage();
+      }
+    }
+
+    function sendMessage() {
+      const input = document.getElementById('chatInput');
+      if (!input) return;
+      const text = input.value.trim();
+      if (!text) return;
+      input.value = '';
+
+      appendUserMessage(text);
+
+      setTimeout(() => {
+        const isPhoto = /打卡|網美|拍照|魚鱗天梯|豆腐岩|將軍村|文創園區/i.test(text);
+        const isRoam = /漫遊|慢活|散策|步道|踏青|爬山|十八尖山|青青草原/i.test(text);
+        const isCafe = /咖啡|老屋|拿鐵|下午茶|甜點|生吐司|工作|筆電|肉桂捲|布丁|暗室微光|吉十|影咖啡/i.test(text);
+        const isHotpot = /火鍋|麻辣鍋|石頭火鍋|汕頭|沙茶鍋|涮涮鍋|吃到飽火鍋|酸菜白肉|壽喜燒|想喝湯|熱湯/i.test(text);
+        const isSteak = /牛排|排餐|大口吃肉|大盎司|厚切|炙燒牛排|史坦利|牛室|吼牛排|吃肉/i.test(text);
+        const isSnack = /小吃|在地小吃|鴨香飯|米粉|米粉湯|鴨肉麵|城隍廟|肉圓|貢丸|夜市小吃|古早味/i.test(text);
+        const isFeastGeneral = /放肆大吃|犒賞|吃到飽|聚餐|大吃一頓|大吃大喝|大餐/i.test(text);
+        const isBar = /酒|啤酒|喝|放肆大喝|居酒屋|熱炒|串燒|bar|pub|微醺|買醉|解悶|小酌/i.test(text);
+        const isBike = /腳踏車|單車|騎車|ubike|自行車|車道|十七公里|漫騎/i.test(text);
+        const isBus = /公車|客運|公車路線|1路|接駁車|搭公車|大眾運輸|怎麼搭車/i.test(text);
+        const isHistory = /歷史|古蹟|文化|老街|州廳|東門城|迎曦門|長和宮|新竹風|九降風/i.test(text);
+        const isWalkRelax = /安靜|放空|發呆|不被打擾|沉澱|海邊|吹風|散步|看海/i.test(text);
+
+        const hasPlaceIntent = (isPhoto || isRoam || isCafe || isHotpot || isSteak || isSnack || isFeastGeneral || isBar || isBike || isBus || isHistory || isWalkRelax);
+
+        if (state.mode === 'explore' || hasPlaceIntent) {
+          generateExploreResponse(text, { isPhoto, isRoam, isCafe, isHotpot, isSteak, isSnack, isFeastGeneral, isBar, isBike, isBus, isHistory, isWalkRelax });
+        } else {
+          generateTreeholeResponse(text);
+        }
+      }, 400);
+    }
+
+    function appendUserMessage(text) {
+      const container = document.getElementById('chatMessages');
+      if (!container) return;
+      const html = `
+        <div class="flex items-start justify-end gap-2">
+          <div class="bg-amber-600 text-white px-4 py-2.5 rounded-2xl rounded-tr-sm text-sm max-w-[80%] shadow-sm leading-relaxed">
+            ${escapeHtml(text)}
+          </div>
+        </div>
+      `;
+      container.insertAdjacentHTML('beforeend', html);
+      container.scrollTop = container.scrollHeight;
+    }
+
+    function appendSystemMessage(text) {
+      const container = document.getElementById('chatMessages');
+      if (!container) return;
+      const html = `
+        <div class="text-center my-2">
+          <span class="text-xs bg-sand-200/80 text-stone-600 px-3 py-1 rounded-full">${escapeHtml(text)}</span>
+        </div>
+      `;
+      container.insertAdjacentHTML('beforeend', html);
+      container.scrollTop = container.scrollHeight;
+    }
+
+    function generateExploreResponse(userText, flags = {}) {
+      let introText = "";
+      let recommendedSpots = [];
+      let searchKeyword = "";
+
+      if (flags.isPhoto) {
+        introText = `${state.profile.nickname}，想用鏡頭捕捉新竹最美的日常光影？依據【1/3 精選法則】，為你推薦三大新竹最吸睛的【打卡熱點】：`;
+        recommendedSpots = [
+          HSINCHU_SPOTS.find(s => s.id === 's_photo_fishscale'),
+          HSINCHU_SPOTS.find(s => s.id === 's_photo_tofu'),
+          HSINCHU_SPOTS.find(s => s.id === 's_photo_general')
+        ];
+        searchKeyword = '新竹+打卡景點+拍照秘境+魚鱗天梯+豆腐岩+將軍村';
+      } else if (flags.isRoam) {
+        introText = `${state.profile.nickname}，想放慢腳步散步深呼吸？精選三大新竹最舒服、大片綠意與微風環抱的【慢活漫遊步道】：`;
+        recommendedSpots = [
+          HSINCHU_SPOTS.find(s => s.id === 's_roam_18peaks'),
+          HSINCHU_SPOTS.find(s => s.id === 's_roam_grass'),
+          HSINCHU_SPOTS.find(s => s.id === 's_walk_river')
+        ];
+        searchKeyword = '新竹+漫遊景點+十八尖山+青青草原+散步步道';
+      } else if (flags.isCafe) {
+        introText = `${state.profile.nickname}，為你精選新竹 Google 評價最高、最具口碑特色的【人氣老屋咖啡名店】：`;
+        recommendedSpots = [
+          HSINCHU_SPOTS.find(s => s.id === 's_cafe_dark'),
+          HSINCHU_SPOTS.find(s => s.id === 's_cafe_godspeed'),
+          HSINCHU_SPOTS.find(s => s.id === 's_shin')
+        ];
+        searchKeyword = '新竹+人氣老屋咖啡廳+焦糖布丁+肉桂捲+工作推薦';
+      } else if (flags.isHotpot) {
+        introText = `${state.profile.nickname}，天冷或辛苦了一整天，讓滾燙的火鍋先烘暖你的心！依據【1/3 精選法則】，為你推薦新竹 Google 評價最高的三大人氣火鍋名店：`;
+        recommendedSpots = [
+          HSINCHU_SPOTS.find(s => s.id === 's_pot_shantou'),
+          HSINCHU_SPOTS.find(s => s.id === 's_pot_magma'),
+          HSINCHU_SPOTS.find(s => s.id === 's_pot_weilu')
+        ];
+        searchKeyword = '新竹+火鍋+推薦+高星級+汕頭火鍋+麻辣鍋';
+      } else if (flags.isSteak) {
+        introText = `${state.profile.nickname}，想大口吃肉犒賞自己？依據【1/3 精選法則】，精選新竹 Google 評價最優、肉汁飽滿的三大牛排排餐首選：`;
+        recommendedSpots = [
+          HSINCHU_SPOTS.find(s => s.id === 's_steak_beefroom'),
+          HSINCHU_SPOTS.find(s => s.id === 's_steak_stanley'),
+          HSINCHU_SPOTS.find(s => s.id === 's_steak_hou')
+        ];
+        searchKeyword = '新竹+牛排+推薦+吃到飽+厚切牛排';
+      } else if (flags.isSnack) {
+        introText = `${state.profile.nickname}，想品嚐新竹最道地的在地風味？依據【1/3 精選法則】，為你整理城隍廟周邊最經典的三大熱騰騰名店：`;
+        recommendedSpots = [
+          HSINCHU_SPOTS.find(s => s.id === 's_snack_duckrice'),
+          HSINCHU_SPOTS.find(s => s.id === 's_snack_mifen'),
+          HSINCHU_SPOTS.find(s => s.id === 's_snack_ducknoodle')
+        ];
+        searchKeyword = '新竹+城隍廟+在地小吃+鴨香飯+米粉湯+推薦';
+      } else if (flags.isFeastGeneral) {
+        introText = `${state.profile.nickname}，今天決定放肆犒賞自己！依據【1/3 精選法則】，從火鍋、牛排與在地老味中各選一間最熱門的高星代表：`;
+        recommendedSpots = [
+          HSINCHU_SPOTS.find(s => s.id === 's_pot_magma'),
+          HSINCHU_SPOTS.find(s => s.id === 's_steak_beefroom'),
+          HSINCHU_SPOTS.find(s => s.id === 's_snack_duckrice')
+        ];
+        searchKeyword = '新竹+聚餐+吃到飽+放肆大吃+熱門餐廳';
+      } else if (flags.isBike) {
+        introText = `${state.profile.nickname}，騎單車吹風是認識新竹最愜意的方式。依據【1/3 精選法則】，為你推薦三條新竹最平緩舒適的自行車路線：`;
+        recommendedSpots = [
+          HSINCHU_SPOTS.find(s => s.id === 's_bike_17km'),
+          HSINCHU_SPOTS.find(s => s.id === 's_bike_leftbank'),
+          HSINCHU_SPOTS.find(s => s.id === 's_bike_greenlake')
+        ];
+        searchKeyword = '新竹+自行車道+單車路線+十七公里海岸線';
+      } else if (flags.isBus) {
+        introText = `${state.profile.nickname}，外地求學就業沒機車也不用擔心。依據【1/3 精選法則】，為你整理初到新竹必搭的三大公車交通神線：`;
+        recommendedSpots = [
+          HSINCHU_SPOTS.find(s => s.id === 's_bus_line1'),
+          HSINCHU_SPOTS.find(s => s.id === 's_bus_bigcity'),
+          HSINCHU_SPOTS.find(s => s.id === 's_bus_shishan')
+        ];
+        searchKeyword = '新竹+公車路線+1路公車+巨城接駁車+台灣好行';
+      } else if (flags.isHistory) {
+        introText = `${state.profile.nickname}，新竹是一座擁有三百年底蘊的風城。依據【1/3 精選法則】，精選三大最值得駐足品味的歷史地標：`;
+        recommendedSpots = [
+          HSINCHU_SPOTS.find(s => s.id === 's_his_dongmen'),
+          HSINCHU_SPOTS.find(s => s.id === 's_his_prefecture'),
+          HSINCHU_SPOTS.find(s => s.id === 's_his_northst')
+        ];
+        searchKeyword = '新竹+歷史古蹟+文化景點+東門城+新竹州廳';
+      } else if (flags.isBar) {
+        introText = `${state.profile.nickname}，想放肆大喝、卸下一整天的緊繃？依據【1/3 精選法則】，為你精選 3 間新竹評分最高、生啤與炭烤串燒超棒的居酒屋名店：`;
+        recommendedSpots = [
+          HSINCHU_SPOTS.find(s => s.id === 's_bar_uncle'),
+          HSINCHU_SPOTS.find(s => s.id === 's_bar_yinjyu'),
+          HSINCHU_SPOTS.find(s => s.id === 's_bar_tiefu')
+        ];
+        searchKeyword = '新竹+啤酒屋+居酒屋+熱炒+小酌+深夜美食';
+      } else {
+        introText = `${state.profile.nickname}，已為你調閱新竹最舒適的散步路線與高星生活座標：`;
+        recommendedSpots = [
+          HSINCHU_SPOTS.find(s => s.id === 's_walk_river'),
+          HSINCHU_SPOTS.find(s => s.id === 's_walk_crab'),
+          HSINCHU_SPOTS.find(s => s.id === 's_shin')
+        ];
+        searchKeyword = '新竹+散步步道+看海吹風+夕陽景點';
+      }
+
+      const cardsHtml = recommendedSpots.filter(Boolean).map(spot => `
+        <div class="bg-white p-4 rounded-xl border border-sand-200 shadow-sm space-y-2.5 place-card-hover">
+          <div class="flex items-start justify-between gap-2">
+            <div>
+              <h4 class="font-bold text-stone-900 text-sm flex items-center gap-1.5">
+                <i class="fa-solid fa-store text-amber-600 text-xs"></i>
+                <span>${spot.name}</span>
+              </h4>
+              <div class="flex items-center gap-2 mt-0.5">
+                <span class="text-xs font-black text-amber-600 flex items-center gap-1">
+                  <i class="fa-solid fa-star text-amber-500"></i> ${spot.rating}
+                </span>
+                <span class="text-[11px] text-stone-400">(${spot.reviews} 則 Google 評論)</span>
+              </div>
+            </div>
+            <span class="text-[10px] bg-amber-100 text-amber-800 px-2 py-0.5 rounded-full font-bold whitespace-nowrap">
+              ${spot.tag.split(' ')[0]}
+            </span>
+          </div>
+
+          <p class="text-xs text-stone-600 leading-relaxed">${spot.desc}</p>
+
+          <p class="text-[11px] text-stone-500 flex items-center gap-1">
+            <i class="fa-solid fa-map-pin text-stone-400"></i>
+            <span>${spot.address}</span>
+          </p>
+
+          <div class="pt-2 border-t border-sand-100 flex flex-wrap items-center gap-2">
+            <button onclick="focusOnMapSpot('${spot.id}')" class="px-3 py-1.5 bg-stone-900 hover:bg-stone-800 text-white text-xs font-bold rounded-lg transition flex items-center gap-1 shadow-xs">
+              <i class="fa-solid fa-location-crosshairs text-amber-400"></i>
+              <span>在 App 地圖定位</span>
+            </button>
+            <a href="https://www.google.com/maps/search/?api=1&query=${encodeURIComponent('新竹 ' + spot.name)}" target="_blank" rel="noopener noreferrer" class="px-3 py-1.5 bg-amber-50 border border-amber-200 text-amber-800 hover:bg-amber-100 text-xs font-bold rounded-lg transition flex items-center gap-1">
+              <i class="fa-solid fa-arrow-up-right-from-square"></i>
+              <span>Google 導航</span>
+            </a>
+            <button onclick="startHangoutById('${spot.id}')" class="px-3 py-1.5 bg-sage-100 border border-sage-300 text-sage-800 hover:bg-sage-200 text-xs font-bold rounded-lg transition flex items-center gap-1">
+              <i class="fa-solid fa-handshake text-sage-600"></i>
+              <span>邀約同行</span>
+            </button>
+            <button onclick="addBookmark('${spot.id}')" class="px-3 py-1.5 bg-white border border-sand-200 text-stone-700 hover:text-amber-700 hover:bg-sand-50 text-xs font-bold rounded-lg transition flex items-center gap-1">
+              <i class="fa-regular fa-bookmark"></i>
+              <span>收藏</span>
+            </button>
+          </div>
+        </div>
+      `).join('');
+
+      const googleMapExploreUrl = `https://www.google.com/maps/search/?api=1&query=${searchKeyword}`;
+
+      const replyHtml = `
+        <div class="flex items-start gap-3">
+          <div class="w-8 h-8 rounded-full bg-amber-600 text-white flex items-center justify-center text-xs flex-shrink-0 shadow-sm">
+            <i class="fa-solid fa-wind"></i>
+          </div>
+          <div class="space-y-3 max-w-[90%] w-full">
+            <div class="bg-sand-50/90 p-4 rounded-2xl rounded-tl-sm border border-sand-200 shadow-sm text-stone-800 text-sm space-y-3">
+              <p class="font-medium text-stone-900">${escapeHtml(introText)}</p>
+              
+              <div class="space-y-3">
+                ${cardsHtml}
+              </div>
+
+              <div class="pt-2 text-center">
+                <a href="${googleMapExploreUrl}" target="_blank" rel="noopener noreferrer" class="inline-flex items-center gap-1.5 px-4 py-2 bg-white hover:bg-amber-50 text-amber-800 border border-amber-300 text-xs font-bold rounded-xl transition shadow-xs">
+                  <i class="fa-solid fa-magnifying-glass-location text-amber-600"></i>
+                  <span>🔍 在 Google 地圖深度搜尋更多【新竹相關】高星好店 ↗</span>
+                </a>
+              </div>
+            </div>
+
+            <button onclick="speakText('${escapeHtml(introText)}')" class="text-[11px] text-amber-800 hover:text-amber-900 font-bold flex items-center gap-1 bg-amber-50 px-2.5 py-1 rounded-md border border-amber-200 transition">
+              <i class="fa-solid fa-headphones"></i>
+              <span>🎧 聽聽暖心絮語 (手動朗讀)</span>
+            </button>
+          </div>
+        </div>
+      `;
+      appendAndScroll(replyHtml);
+    }
+
+    function generateTreeholeResponse(userText) {
+      const speechReplies = [
+        `${state.profile.nickname}，今天的新竹風是不是有點急躁？在陌生環境一個人生活真的很不容易。想跟你說，不需要急著融入所有的人事物，今天有好好度過就已經非常棒了。我一直在這裡陪你。`,
+        `辛苦了。孤單或壓力都是剛到新城市最真實的心情，不用急著把它壓抑掉。今晚別想太多未來的壓力，給自己倒杯溫開水或去吃一頓熱騰騰的火鍋，早點休息好嗎？`,
+        `聽得出來你很努力在適應兩點一線的日子。如果覺得累了，隨時把棲風當樹洞，想吐槽什麼、想碎碎念什麼都可以跟我說，這裡沒有人會評價你。`
+      ];
+      const selectedSpeech = speechReplies[Math.floor(Math.random() * speechReplies.length)];
+
+      const replyHtml = `
+        <div class="flex items-start gap-3">
+          <div class="w-8 h-8 rounded-full bg-stone-900 text-white flex items-center justify-center text-xs flex-shrink-0 shadow-sm">
+            <i class="fa-solid fa-hand-holding-heart text-amber-400"></i>
+          </div>
+          <div class="space-y-1.5 max-w-[85%]">
+            <div class="bg-gradient-to-br from-white to-amber-50/50 p-4 rounded-2xl rounded-tl-sm border border-amber-200/70 shadow-sm text-stone-800 text-sm leading-relaxed">
+              ${escapeHtml(selectedSpeech)}
+            </div>
+            <button onclick="speakText('${escapeHtml(selectedSpeech)}')" class="text-[11px] text-amber-800 hover:text-amber-900 font-bold flex items-center gap-1 bg-amber-50 px-2.5 py-1 rounded-md border border-amber-200 transition">
+              <i class="fa-solid fa-headphones"></i>
+              <span>🎧 聽聽暖心絮語</span>
+            </button>
+          </div>
+        </div>
+      `;
+      appendAndScroll(replyHtml);
+    }
+
+    function appendAndScroll(html) {
+      const container = document.getElementById('chatMessages');
+      if (!container) return;
+      container.insertAdjacentHTML('beforeend', html);
+      container.scrollTop = container.scrollHeight;
+    }
+
+    /* 6. 親切語音引擎 (Web Speech API) */
+    let preferredVoice = null;
+
+    function initVoice() {
+      if (!('speechSynthesis' in window)) return;
+      const loadVoices = () => {
+        const voices = window.speechSynthesis.getVoices();
+        preferredVoice = voices.find(v => v.lang === 'zh-TW' && (v.name.includes('Natural') || v.name.includes('Google') || v.name.includes('Mei-Jia') || v.name.includes('HsiaoChen'))) ||
+                         voices.find(v => v.lang === 'zh-TW') ||
+                         voices.find(v => v.lang.startsWith('zh'));
+      };
+      loadVoices();
+      if (window.speechSynthesis.onvoiceschanged !== undefined) {
+        window.speechSynthesis.onvoiceschanged = loadVoices;
+      }
+    }
+    initVoice();
+
+    function speakText(text) {
+      if (!('speechSynthesis' in window)) {
+        showToast('您的瀏覽器目前不支援語音播放功能。', 'fa-triangle-exclamation');
+        return;
+      }
+      window.speechSynthesis.cancel();
+
+      const utterance = new SpeechSynthesisUtterance(text);
+      if (preferredVoice) utterance.voice = preferredVoice;
+      utterance.lang = 'zh-TW';
+      utterance.rate = 0.90;
+      utterance.pitch = 1.02;
+      window.speechSynthesis.speak(utterance);
+      showToast('正在為您暖心朗讀...', 'fa-headphones');
+    }
+
+    let recognition = null;
+    let isRecording = false;
+
+    function toggleVoiceInput() {
+      const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+      if (!SpeechRecognition) {
+        showToast('您的瀏覽器不支援語音輸入，請直接打字。', 'fa-triangle-exclamation');
+        return;
+      }
+
+      const micIcon = document.getElementById('micIcon');
+      if (!isRecording) {
+        recognition = new SpeechRecognition();
+        recognition.lang = 'zh-TW';
+        recognition.interimResults = false;
+
+        recognition.onstart = () => {
+          isRecording = true;
+          if (micIcon) micIcon.className = 'fa-solid fa-circle-dot text-red-500 animate-pulse';
+          showToast('請開始說話，棲風在聽...', 'fa-microphone');
+        };
+        recognition.onresult = (event) => {
+          const transcript = event.results[0][0].transcript;
+          const input = document.getElementById('chatInput');
+          if (input) input.value = transcript;
+        };
+        recognition.onerror = () => { stopRecording(); };
+        recognition.onend = () => { stopRecording(); };
+
+        recognition.start();
+      } else {
+        if (recognition) recognition.stop();
+        stopRecording();
+      }
+    }
+
+    function stopRecording() {
+      isRecording = false;
+      const micIcon = document.getElementById('micIcon');
+      if (micIcon) micIcon.className = 'fa-solid fa-microphone';
+    }
+
+    /* 7. Leaflet 地圖模組 (ESRI 高清圖資) */
+    function initMap() {
+      if (mapInstance) return;
+      if (typeof L === 'undefined') {
+        console.warn('Leaflet library is still loading...');
+        return;
+      }
+
+      const mapContainer = document.getElementById('hsinchuMap');
+      if (!mapContainer) return;
+
+      const hsinchuBounds = L.latLngBounds(
+        L.latLng(24.7000, 120.8600),
+        L.latLng(24.8800, 121.0800)
+      );
+
+      mapInstance = L.map('hsinchuMap', {
+        zoomControl: true,
+        scrollWheelZoom: true,
+        maxBounds: hsinchuBounds,
+        maxBoundsViscosity: 0.9,
+        minZoom: 11
+      }).setView([24.8038, 120.9712], 14);
+
+      L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Street_Map/MapServer/tile/{z}/{y}/{x}', {
+        attribution: 'Tiles &copy; Esri &mdash; Source: Esri, DeLorme, NAVTEQ, USGS',
+        maxZoom: 18
+      }).addTo(mapInstance);
+
+      renderMapMarkers('all');
+    }
+
+    function createPinIcon(cat, isCompleted = false) {
+      let iconClass = 'fa-location-dot';
+      let bgClass = 'bg-amber-600';
+
+      if (isCompleted) {
+        bgClass = 'bg-amber-500 ring-4 ring-amber-200';
+        iconClass = 'fa-crown text-amber-100';
+      } else if (cat === 'photo') {
+        bgClass = 'bg-fuchsia-600 ring-2 ring-fuchsia-300';
+        iconClass = 'fa-camera-retro text-white';
+      } else if (cat === 'roam') {
+        bgClass = 'bg-teal-600 ring-2 ring-teal-300';
+        iconClass = 'fa-tree text-white';
+      } else if (cat === 'hotpot') {
+        bgClass = 'bg-red-600 ring-2 ring-red-300';
+        iconClass = 'fa-fire-burner text-white';
+      } else if (cat === 'steak') {
+        bgClass = 'bg-stone-800 ring-2 ring-amber-400';
+        iconClass = 'fa-drumstick-bite text-amber-300';
+      } else if (cat === 'snack') {
+        bgClass = 'bg-orange-600';
+        iconClass = 'fa-bowl-food text-white';
+      } else if (cat === 'bar') {
+        bgClass = 'bg-rose-600 ring-2 ring-rose-300';
+        iconClass = 'fa-beer-mug-empty text-white';
+      } else if (cat === 'cafe') {
+        bgClass = 'bg-amber-700';
+        iconClass = 'fa-mug-saucer text-amber-100';
+      } else if (cat === 'bike') {
+        bgClass = 'bg-emerald-600';
+        iconClass = 'fa-bicycle text-white';
+      } else if (cat === 'bus') {
+        bgClass = 'bg-blue-600';
+        iconClass = 'fa-bus text-white';
+      } else if (cat === 'history') {
+        bgClass = 'bg-amber-800';
+        iconClass = 'fa-landmark text-amber-100';
+      } else if (cat === 'walk') {
+        bgClass = 'bg-sky-600';
+        iconClass = 'fa-wind text-white';
+      }
+
+      return L.divIcon({
+        className: 'custom-div-pin',
+        html: `
+          <div class="w-8 h-8 rounded-full ${bgClass} text-white flex items-center justify-center shadow-lg border-2 border-white hover:scale-120 transition-transform cursor-pointer">
+            <i class="fa-solid ${iconClass} text-xs"></i>
+          </div>
+        `,
+        iconSize: [32, 32],
+        iconAnchor: [16, 32],
+        popupAnchor: [0, -32]
+      });
+    }
+
+    function renderMapMarkers(filterCat) {
+      if (!mapInstance) return;
+      mapMarkers.forEach(m => mapInstance.removeLayer(m.marker));
+      mapMarkers = [];
+
+      const activeSpots = [];
+
+      HSINCHU_SPOTS.forEach(spot => {
+        if (filterCat !== 'all' && spot.cat !== filterCat) return;
+        activeSpots.push(spot);
+
+        const isQuestSpot = (state.currentQuest && state.currentQuest.spotId === spot.id);
+        const isCompleted = state.completedQuestIds.includes(state.currentQuest?.id) && isQuestSpot;
+
+        const marker = L.marker([spot.lat, spot.lng], {
+          icon: createPinIcon(spot.cat, isCompleted)
+        }).addTo(mapInstance);
+
+        const popupContent = `
+          <div class="p-1 space-y-1.5" style="min-width: 220px;">
+            <div style="display:flex;align-items:center;justify-content:space-between;gap:4px;">
+              <h4 style="font-weight:bold;color:#1c1917;margin:0;font-size:14px;">${spot.name}</h4>
+            </div>
+            <div style="display:flex;align-items:gap:6px;margin:2px 0;">
+              <span style="font-size:12px;color:#d97706;font-weight:bold;">⭐ ${spot.rating}</span>
+              <span style="font-size:10px;color:#78716c;margin-left:4px;">(${spot.reviews} 評論)</span>
+            </div>
+            <p style="font-size:11px;color:#b45309;margin:2px 0;font-weight:600;">${spot.tag}</p>
+            <p style="font-size:11px;color:#57534e;line-height:1.4;margin:4px 0;">${spot.desc}</p>
+            <p style="font-size:10px;color:#a8a29e;margin:2px 0;">📍 ${spot.address}</p>
+            <div style="margin-top:8px;display:flex;flex-wrap:wrap;gap:6px;">
+              <a href="https://www.google.com/maps/search/?api=1&query=${encodeURIComponent('新竹 ' + spot.name)}" target="_blank" rel="noopener noreferrer" style="font-size:11px;background:#b45309;color:#fff;padding:4px 8px;border-radius:6px;text-decoration:none;font-weight:bold;display:inline-flex;align-items:center;gap:3px;">
+                <span>在 Google 地圖導航 ↗</span>
+              </a>
+              <button onclick="startHangoutById('${spot.id}')" style="font-size:11px;background:#3f6212;color:#fff;padding:4px 8px;border-radius:6px;border:none;cursor:pointer;font-weight:bold;display:inline-flex;align-items:center;gap:3px;">
+                <span>🤝 發起微光同行</span>
+              </button>
+            </div>
+          </div>
+        `;
+        marker.bindPopup(popupContent);
+        mapMarkers.push({ spotId: spot.id, marker: marker, lat: spot.lat, lng: spot.lng });
+      });
+
+      if (activeSpots.length > 0) {
+        const bounds = L.latLngBounds(activeSpots.map(s => [s.lat, s.lng]));
+        mapInstance.fitBounds(bounds, { padding: [50, 50], maxZoom: 15 });
+      } else {
+        mapInstance.setView([24.8038, 120.9712], 14);
+      }
+    }
+
+    function filterMap(cat, btn) {
+      renderMapMarkers(cat);
+      document.querySelectorAll('.map-filter').forEach(b => {
+        b.className = "map-filter px-3 py-1.5 rounded-lg bg-white border border-sand-200 text-stone-700 hover:bg-sand-100 transition whitespace-nowrap font-medium";
+      });
+      btn.className = "map-filter px-3 py-1.5 rounded-lg bg-stone-800 text-white transition whitespace-nowrap font-bold shadow-xs";
+    }
+
+    function focusOnMapSpot(spotId) {
+      switchTab('map');
+      const spot = HSINCHU_SPOTS.find(s => s.id === spotId);
+      if (spot) {
+        if (!mapInstance) initMap();
+        setTimeout(() => {
+          if (mapInstance) {
+            mapInstance.invalidateSize();
+            mapInstance.flyTo([spot.lat, spot.lng], 16, { duration: 1.0 });
+            setTimeout(() => {
+              const target = mapMarkers.find(m => m.spotId === spotId);
+              if (target) target.marker.openPopup();
+            }, 1100);
+          }
+        }, 250);
+      }
+    }
+
+    /* 8. 靈感占卜任務 (Gamified Quest) */
+    function renderQuestCard() {
+      const q = state.currentQuest;
+      const spot = HSINCHU_SPOTS.find(s => s.id === q.spotId) || HSINCHU_SPOTS[0];
+      const isCompleted = state.completedQuestIds.includes(q.id);
+      const cardInner = document.getElementById('questCardInner');
+      const btnCheckIn = document.getElementById('btnCheckInQuest');
+
+      if (!cardInner || !btnCheckIn) return;
+
+      document.getElementById('questCardTitle').innerText = q.title;
+      document.getElementById('questCardDesc').innerText = q.desc;
+      document.getElementById('questCardSpotName').innerText = `${spot.name} (${spot.rating}★)`;
+      document.getElementById('questCardCategory').innerText = q.type === 'practical' ? '生活放肆犒賞卡' : '心靈療癒雞湯卡';
+
+      if (isCompleted) {
+        cardInner.classList.add('golden-achievement');
+        document.getElementById('questCardStatus').innerText = '✨ COMPLETED ACHIEVED';
+        document.getElementById('questCardStatus').className = 'text-xs text-amber-800 font-black tracking-wider';
+        btnCheckIn.innerHTML = '<i class="fa-solid fa-crown text-amber-400"></i><span>已解鎖金色成就卡</span>';
+        btnCheckIn.classList.replace('bg-amber-600', 'bg-amber-800');
+      } else {
+        cardInner.classList.remove('golden-achievement');
+        document.getElementById('questCardStatus').innerText = 'READY TO EXPLORE';
+        document.getElementById('questCardStatus').className = 'text-xs text-stone-400 font-bold tracking-wider';
+        btnCheckIn.innerHTML = '<i class="fa-solid fa-check"></i><span>前往打卡解鎖金色卡牌</span>';
+        btnCheckIn.classList.replace('bg-amber-800', 'bg-amber-600');
+      }
+    }
+
+    function drawQuestCard() {
+      const remainQuests = QUEST_POOL.filter(q => q.id !== state.currentQuest.id);
+      state.currentQuest = remainQuests[Math.floor(Math.random() * remainQuests.length)];
+      renderQuestCard();
+      renderMapMarkers('all');
+      showToast('已為你抽取新的靈感指引！', 'fa-sparkles');
+    }
+
+    function acceptQuestAndJumpMap() {
+      focusOnMapSpot(state.currentQuest.spotId);
+      showToast(`已鎖定目標座標：${state.currentQuest.title}`, 'fa-crosshairs');
+    }
+
+    function completeCurrentQuest() {
+      const q = state.currentQuest;
+      if (!state.completedQuestIds.includes(q.id)) {
+        state.completedQuestIds.push(q.id);
+        localStorage.setItem('nestwind_completed_quests', JSON.stringify(state.completedQuestIds));
+      }
+      renderQuestCard();
+      renderMapMarkers('all');
+      renderBookmarks();
+      showToast('🎉 恭喜完成打卡！已轉化為金色成就卡並存入收藏庫', 'fa-crown');
+    }
+
+    /* 9. 封蠟心情日記與回信 (Mood Diary) */
+    let selectedMoodVal = 'calm';
+
+    function selectMood(mood, btn) {
+      selectedMoodVal = mood;
+      document.querySelectorAll('.mood-btn').forEach(b => {
+        b.className = "mood-btn p-2 rounded-xl border border-sand-200 bg-sand-50 hover:bg-sand-100 text-center transition flex flex-col items-center";
+      });
+      btn.className = "mood-btn p-2 rounded-xl border-2 border-amber-600 bg-amber-50 text-center transition flex flex-col items-center";
+    }
+
+    function submitDiary() {
+      const contentEl = document.getElementById('diaryContent');
+      const locEl = document.getElementById('diaryLocation');
+      if (!contentEl) return;
+
+      const content = contentEl.value.trim();
+      const loc = locEl ? locEl.value : '新竹市區';
+      if (!content) {
+        showToast('請先寫下一點文字，即使是一句話也可以。', 'fa-pen');
+        return;
+      }
+
+      const moodMap = { calm: '平靜 🍃', confused: '迷茫 🌫️', lonely: '孤單 🌧️', joy: '雀躍 ☀️' };
+      const todayStr = new Date().toLocaleDateString('zh-TW', { month: 'short', day: 'numeric' });
+
+      let replyText = '';
+      if (selectedMoodVal === 'lonely') {
+        replyText = `親愛的${state.profile.nickname}：在新竹風吹動的夜晚，孤單像風一樣無孔不入。但在${loc}走過的每一步，都是你扎根在地的印記。今晚早點休息，給辛苦的自己一個溫暖的擁抱。`;
+      } else if (selectedMoodVal === 'confused') {
+        replyText = `來自${state.profile.hometown}的${state.profile.nickname}：面對未來的迷茫，最好的解法往往不是思考，而是動身去吹吹海風或吃頓滾燙的美食。在${loc}留下的片刻空白，會變成滋養你的力量。慢慢來，最快。`;
+      } else {
+        replyText = `${state.profile.nickname}，看到你今天在${loc}度過平靜而有收穫的時光，真的很替你開心！繼續以自己的步調，把新竹慢慢變成屬於你的舒適圈。`;
+      }
+
+      const newEntry = {
+        id: Date.now(),
+        date: todayStr,
+        mood: moodMap[selectedMoodVal] || '平靜 🍃',
+        location: loc,
+        content: content,
+        reply: replyText
+      };
+
+      state.diaries.unshift(newEntry);
+      localStorage.setItem('nestwind_diaries', JSON.stringify(state.diaries));
+
+      contentEl.value = '';
+      renderDiaries();
+      showToast('✉️ 信件已寄給棲風，專屬封蠟回信已送達！已保存至你的心靈歷程', 'fa-envelope');
+    }
+
+    function renderDiaries() {
+      const historyList = document.getElementById('diaryHistoryList');
+      const latestBody = document.getElementById('letterBody');
+      const letterDate = document.getElementById('letterDate');
+      const totalCountEl = document.getElementById('diaryTotalCount');
+
+      if (!historyList || !latestBody) return;
+
+      if (totalCountEl) totalCountEl.innerText = state.diaries ? state.diaries.length : 0;
+
+      if (!state.diaries || state.diaries.length === 0) {
+        latestBody.innerHTML = '<p class="text-stone-400 italic text-center">尚未寄出今日日記。<br>寫下一段字句，讓棲風為你回信。</p>';
+        historyList.innerHTML = '<p class="text-xs text-stone-400 py-3 text-center">目前尚無歷史紀錄。寫下第一篇日記開始累積心靈成長歷程吧！</p>';
+        return;
+      }
+
+      displayDiaryLetter(state.diaries[0]);
+
+      historyList.innerHTML = state.diaries.map(d => `
+        <div onclick="viewHistoricalDiary(${d.id})" class="p-3 bg-sand-50 hover:bg-amber-50/70 cursor-pointer rounded-xl border border-sand-200 transition text-xs space-y-1.5 group">
+          <div class="flex items-center justify-between text-stone-500 font-bold">
+            <span class="group-hover:text-amber-800 transition-colors"><i class="fa-regular fa-calendar-days mr-1 text-amber-600"></i>${escapeHtml(d.date)} ｜ ${escapeHtml(d.location)}</span>
+            <span class="bg-white px-2 py-0.5 rounded-full border border-sand-200 text-stone-700">${escapeHtml(d.mood)}</span>
+          </div>
+          <p class="text-stone-700 font-medium line-clamp-1 group-hover:text-stone-900">「${escapeHtml(d.content)}」</p>
+          <div class="flex items-center justify-between pt-1 border-t border-sand-100 text-[11px] text-stone-400">
+            <span class="truncate max-w-[280px]">回信：${escapeHtml(d.reply)}</span>
+            <span class="text-amber-700 font-bold group-hover:translate-x-0.5 transition-transform flex items-center gap-1">
+              <span>點擊重溫</span>
+              <i class="fa-solid fa-angle-right text-[10px]"></i>
+            </span>
+          </div>
+        </div>
+      `).join('');
+    }
+
+    function displayDiaryLetter(diaryEntry) {
+      const latestBody = document.getElementById('letterBody');
+      const letterDate = document.getElementById('letterDate');
+      if (!latestBody || !diaryEntry) return;
+
+      if (letterDate) letterDate.innerText = `${diaryEntry.date} · 關聯足跡：${diaryEntry.location}`;
+
+      latestBody.innerHTML = `
+        <div class="letter-reveal space-y-3 w-full">
+          <div class="flex items-center justify-between">
+            <div class="text-xs text-amber-800 bg-amber-100/70 inline-block px-2.5 py-0.5 rounded-full font-bold">
+              心情基調：${escapeHtml(diaryEntry.mood)}
+            </div>
+            <span class="text-[11px] text-stone-400 font-serif">寄給棲風的信件</span>
+          </div>
+          <div class="p-3 bg-white/80 rounded-xl border border-sand-200 text-xs text-stone-600 italic leading-relaxed">
+            「${escapeHtml(diaryEntry.content)}」
+          </div>
+          <p class="font-serif text-sm text-stone-800 leading-relaxed font-medium">
+            ${escapeHtml(diaryEntry.reply)}
+          </p>
+          <div class="text-right text-xs text-stone-500 font-serif pt-1">— 棲風的晚風守護</div>
+        </div>
+      `;
+    }
+
+    function viewHistoricalDiary(diaryId) {
+      const entry = state.diaries.find(d => d.id === diaryId);
+      if (entry) {
+        displayDiaryLetter(entry);
+        showToast(`已為您載入 ${entry.date} 的心靈回憶錄`, 'fa-clock-rotate-left');
+        document.getElementById('latestLetterBox')?.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+      }
+    }
+
+    function readLetterAloud() {
+      if (state.diaries && state.diaries.length > 0) {
+        speakText(state.diaries[0].reply);
+      } else {
+        showToast('尚無可讀取的回信內容。', 'fa-circle-info');
+      }
+    }
+
+    /* 10. 微光同行公佈欄 */
+    function renderHangouts() {
+      const grid = document.getElementById('hangoutGrid');
+      if (!grid) return;
+
+      grid.innerHTML = state.hangouts.map(h => {
+        const userTag = `${state.profile.nickname} (${state.profile.hometown})`;
+        const hasJoined = h.users.includes(userTag);
+
+        return `
+          <div class="bg-white rounded-2xl p-5 shadow-sm border border-sand-200 flex flex-col justify-between space-y-4">
+            <div class="space-y-2">
+              <div class="flex items-center justify-between">
+                <span class="text-xs bg-amber-100 text-amber-800 px-2.5 py-0.5 rounded-full font-bold">${escapeHtml(h.tag)}</span>
+                <span class="text-xs font-bold text-amber-700"><i class="fa-solid fa-user-group mr-1"></i>${h.count} 人同行</span>
+              </div>
+              <h4 class="font-bold text-base text-stone-900">${escapeHtml(h.place)}</h4>
+              <p class="text-xs text-stone-500"><i class="fa-regular fa-clock mr-1"></i>時間：${escapeHtml(h.time)}</p>
+              <p class="text-xs text-stone-600"><i class="fa-solid fa-user mr-1"></i>發起人：${escapeHtml(h.creator)}</p>
+              
+              <div class="pt-2 border-t border-sand-100">
+                <p class="text-[11px] text-stone-400 mb-1.5 font-medium">同行名單：</p>
+                <div class="flex flex-wrap gap-1.5">
+                  ${h.users.map(u => `<span class="text-[11px] bg-sand-100 text-stone-700 px-2 py-0.5 rounded-md font-medium">${escapeHtml(u)}</span>`).join('')}
+                </div>
+              </div>
+            </div>
+
+            <div class="flex items-center gap-2 pt-2">
+              <button onclick="toggleJoinHangout('${h.id}')" class="flex-1 py-2 text-xs font-bold rounded-xl transition ${hasJoined ? 'bg-stone-200 text-stone-700 hover:bg-stone-300' : 'bg-amber-600 text-white hover:bg-amber-700 shadow-sm'}">
+                <i class="fa-solid fa-handshake mr-1"></i>
+                <span>${hasJoined ? '取消默默同行' : '🤝 默默同行 (+1)'}</span>
+              </button>
+            </div>
+          </div>
+        `;
+      }).join('');
+    }
+
+    function toggleJoinHangout(hangoutId) {
+      const h = state.hangouts.find(item => item.id === hangoutId);
+      if (!h) return;
+
+      const userTag = `${state.profile.nickname} (${state.profile.hometown})`;
+      const idx = h.users.indexOf(userTag);
+
+      if (idx === -1) {
+        h.users.push(userTag);
+        h.count += 1;
+        showToast(`已為您加入同行名單：${userTag}`, 'fa-handshake');
+      } else {
+        h.users.splice(idx, 1);
+        h.count -= 1;
+        showToast('已取消默默同行。', 'fa-info');
+      }
+
+      localStorage.setItem('nestwind_hangouts', JSON.stringify(state.hangouts));
+      renderHangouts();
+    }
+
+    function startHangoutById(spotId) {
+      const spot = HSINCHU_SPOTS.find(s => s.id === spotId);
+      const placeName = spot ? spot.name : spotId;
+      startHangoutWithPlace(placeName);
+    }
+
+    function startHangoutWithPlace(placeName) {
+      switchTab('hangout');
+      openCreateHangoutModal(placeName);
+      showToast(`已為您選定【${placeName}】，請填寫時間與默契即可發佈！`, 'fa-handshake');
+    }
+
+    function openCreateHangoutModal(presetPlace = '') {
+      if (presetPlace) {
+        const placeInput = document.getElementById('hangoutPlace');
+        if (placeInput) placeInput.value = presetPlace;
+      }
+      document.getElementById('hangoutModal').classList.remove('hidden');
+    }
+
+    function closeHangoutModal() {
+      document.getElementById('hangoutModal').classList.add('hidden');
+    }
+
+    function handleTagSelectChange(selectEl) {
+      const customWrapper = document.getElementById('customTagWrapper');
+      if (selectEl.value === '__CUSTOM__') {
+        customWrapper.classList.remove('hidden');
+        document.getElementById('hangoutCustomTagInput')?.focus();
+      } else {
+        customWrapper.classList.add('hidden');
+      }
+    }
+
+    function submitNewHangout() {
+      const place = document.getElementById('hangoutPlace').value.trim();
+      const time = document.getElementById('hangoutTime').value.trim();
+      const selectVal = document.getElementById('hangoutTagSelect').value;
+      const customTagInput = document.getElementById('hangoutCustomTagInput').value.trim();
+
+      if (!place || !time) {
+        showToast('請填寫想去的地點與預計時間。', 'fa-circle-exclamation');
+        return;
+      }
+
+      let finalTag = selectVal;
+      if (selectVal === '__CUSTOM__' || customTagInput) {
+        if (!customTagInput) {
+          showToast('您選擇了自創默契，請在下方輸入自訂標籤文字。', 'fa-pen');
+          return;
+        }
+        finalTag = customTagInput.startsWith('#') ? customTagInput : '#' + customTagInput;
+      }
+
+      const userTag = `${state.profile.nickname} (${state.profile.hometown})`;
+      const newHangout = {
+        id: 'h_' + Date.now(),
+        creator: `${state.profile.nickname} (${state.profile.hometown})`,
+        place: place,
+        time: time,
+        tag: finalTag,
+        count: 1,
+        users: [userTag]
+      };
+
+      state.hangouts.unshift(newHangout);
+      localStorage.setItem('nestwind_hangouts', JSON.stringify(state.hangouts));
+      
+      document.getElementById('hangoutPlace').value = '';
+      document.getElementById('hangoutTime').value = '';
+      document.getElementById('hangoutCustomTagInput').value = '';
+      document.getElementById('customTagWrapper').classList.add('hidden');
+      document.getElementById('hangoutTagSelect').value = '#打卡拍照互相幫忙掌鏡';
+
+      closeHangoutModal();
+      renderHangouts();
+      showToast(`📢 您的漫遊邀約「${finalTag}」已發佈至公佈欄！`, 'fa-bullhorn');
+    }
+
+    /* 11. 足跡與記憶收藏庫 2.0 */
+    let currentBookmarkSubTab = 'places';
+
+    function switchBookmarkSubTab(tab) {
+      currentBookmarkSubTab = tab;
+      const btnPlaces = document.getElementById('bTab-places');
+      const btnQuests = document.getElementById('bTab-quests');
+
+      if (!btnPlaces || !btnQuests) return;
+
+      if (tab === 'places') {
+        btnPlaces.className = "px-4 py-2 rounded-xl bg-stone-900 text-white transition shadow-sm";
+        btnQuests.className = "px-4 py-2 rounded-xl bg-sand-100 text-stone-600 hover:bg-sand-200 transition";
+      } else {
+        btnQuests.className = "px-4 py-2 rounded-xl bg-stone-900 text-white transition shadow-sm";
+        btnPlaces.className = "px-4 py-2 rounded-xl bg-sand-100 text-stone-600 hover:bg-sand-200 transition";
+      }
+      renderBookmarks();
+    }
+
+    function renderBookmarks() {
+      const searchKey = (document.getElementById('bookmarkSearch')?.value || '').toLowerCase();
+      const container = document.getElementById('bookmarkCardsGrid');
+      const countP = document.getElementById('countPlaces');
+      const countQ = document.getElementById('countQuests');
+
+      if (countP) countP.innerText = state.bookmarks.length;
+      if (countQ) countQ.innerText = state.completedQuestIds.length;
+      if (!container) return;
+
+      if (currentBookmarkSubTab === 'places') {
+        const filtered = state.bookmarks.filter(b => 
+          b.name.toLowerCase().includes(searchKey) || 
+          (b.note && b.note.toLowerCase().includes(searchKey)) ||
+          (b.userTags && b.userTags.some(t => t.toLowerCase().includes(searchKey)))
+        );
+
+        if (filtered.length === 0) {
+          container.innerHTML = '<div class="col-span-full py-12 text-center text-stone-400 text-sm">無符合的收藏地點。</div>';
+          return;
+        }
+
+        container.innerHTML = filtered.map(b => `
+          <div class="bg-white rounded-2xl p-5 shadow-sm border border-sand-200 flex flex-col justify-between space-y-3">
+            <div class="space-y-2">
+              <div class="flex items-center justify-between">
+                <span class="text-xs bg-amber-100 text-amber-800 px-2.5 py-0.5 rounded-full font-bold">精選足跡</span>
+                <div class="flex items-center space-x-2">
+                  <button onclick="openNoteModal('${b.id}')" title="編輯筆記與標籤" class="text-stone-400 hover:text-amber-600 text-xs"><i class="fa-solid fa-pen-to-square"></i></button>
+                  <button onclick="removeBookmark('${b.id}')" title="刪除收藏" class="text-stone-400 hover:text-red-500 text-xs"><i class="fa-solid fa-trash-can"></i></button>
+                </div>
+              </div>
+              <h4 class="font-bold text-base text-stone-900">${escapeHtml(b.name)}</h4>
+              <p class="text-xs text-amber-700 font-bold">⭐ ${b.rating || '4.6'} (${b.reviews || '好評'} 評價)</p>
+              <p class="text-xs text-stone-600">${escapeHtml(b.desc)}</p>
+              
+              <div class="pt-2 border-t border-sand-100 space-y-1.5">
+                <p class="text-xs text-amber-900 font-medium"><i class="fa-solid fa-pen-nib mr-1 text-amber-600"></i>私房筆記：${escapeHtml(b.note || '尚無筆記')}</p>
+                <div class="flex flex-wrap gap-1">
+                  ${(b.userTags || []).map(t => `<span class="text-[10px] bg-sand-100 text-stone-600 px-2 py-0.5 rounded font-medium">${escapeHtml(t)}</span>`).join('')}
+                </div>
+              </div>
+            </div>
+
+            <div class="pt-2 flex items-center gap-2">
+              <button onclick="focusOnMapSpot('${b.id}')" class="flex-1 py-1.5 bg-stone-900 hover:bg-stone-800 text-white text-xs font-bold rounded-lg transition">地圖定位</button>
+              <a href="https://www.google.com/maps/search/?api=1&query=${encodeURIComponent('新竹 ' + b.name)}" target="_blank" rel="noopener noreferrer" class="flex-1 py-1.5 bg-sand-100 hover:bg-sand-200 text-stone-800 text-xs font-bold rounded-lg text-center transition">外部導航</a>
+            </div>
+          </div>
+        `).join('');
+
+      } else {
+        const completedQuests = QUEST_POOL.filter(q => state.completedQuestIds.includes(q.id));
+        if (completedQuests.length === 0) {
+          container.innerHTML = '<div class="col-span-full py-12 text-center text-stone-400 text-sm">尚未解鎖任何成就卡，快去「靈感占卜」完成打卡吧！</div>';
+          return;
+        }
+
+        container.innerHTML = completedQuests.map(q => `
+          <div class="golden-achievement rounded-2xl p-5 shadow-md flex flex-col justify-between space-y-3">
+            <div class="space-y-2">
+              <div class="flex items-center justify-between">
+                <span class="text-xs bg-amber-200 text-amber-900 px-2.5 py-0.5 rounded-full font-black">✨ 金色成就版</span>
+                <span class="text-xs text-amber-800 font-bold"><i class="fa-solid fa-award mr-1"></i>COMPLETED</span>
+              </div>
+              <h4 class="font-serif font-bold text-base text-stone-900">${escapeHtml(q.title)}</h4>
+              <p class="text-xs text-stone-700 leading-relaxed">${escapeHtml(q.desc)}</p>
+            </div>
+            <div class="pt-2 border-t border-amber-300/60 flex justify-end">
+              <button onclick="focusOnMapSpot('${q.spotId}')" class="px-3 py-1 bg-amber-800 text-white text-xs font-bold rounded-lg hover:bg-amber-900 transition">重新造訪坐標</button>
+            </div>
+          </div>
+        `).join('');
+      }
+    }
+
+    function addBookmark(spotId) {
+      if (state.bookmarks.some(b => b.id === spotId)) {
+        showToast('該地點已在您的記憶收藏庫中！', 'fa-info');
+        return;
+      }
+      const spot = HSINCHU_SPOTS.find(s => s.id === spotId);
+      if (spot) {
+        state.bookmarks.push({ ...spot, note: '於對話推薦中收藏', userTags: ['#自選私房'] });
+        localStorage.setItem('nestwind_bookmarks', JSON.stringify(state.bookmarks));
+        renderBookmarks();
+        showToast(`已將「${spot.name}」收藏至生活指南！`, 'fa-bookmark');
+      }
+    }
+
+    function removeBookmark(spotId) {
+      state.bookmarks = state.bookmarks.filter(b => b.id !== spotId);
+      localStorage.setItem('nestwind_bookmarks', JSON.stringify(state.bookmarks));
+      renderBookmarks();
+      showToast('已自收藏庫移除。', 'fa-trash-can');
+    }
+
+    function openNoteModal(bookmarkId) {
+      const b = state.bookmarks.find(item => item.id === bookmarkId);
+      if (!b) return;
+      document.getElementById('editBookmarkId').value = b.id;
+      document.getElementById('editBookmarkNote').value = b.note || '';
+      document.getElementById('editBookmarkTags').value = (b.userTags || []).join(', ');
+      document.getElementById('noteModal').classList.remove('hidden');
+    }
+
+    function closeNoteModal() {
+      document.getElementById('noteModal').classList.add('hidden');
+    }
+
+    function saveBookmarkNote() {
+      const id = document.getElementById('editBookmarkId').value;
+      const note = document.getElementById('editBookmarkNote').value.trim();
+      const tagsStr = document.getElementById('editBookmarkTags').value.trim();
+
+      const b = state.bookmarks.find(item => item.id === id);
+      if (b) {
+        b.note = note;
+        b.userTags = tagsStr ? tagsStr.split(/[,，\s]+/).filter(Boolean) : [];
+        localStorage.setItem('nestwind_bookmarks', JSON.stringify(state.bookmarks));
+        renderBookmarks();
+        closeNoteModal();
+        showToast('私房筆記與標籤已更新！', 'fa-check');
+      }
+    }
+
+    function escapeHtml(string) {
+      return String(string).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+    }
+  </script>
+</body>
+</html>
